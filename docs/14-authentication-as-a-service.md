@@ -249,3 +249,58 @@ and the temptation to upgrade the claim is highest.
 - [Watch certificate of authenticity — market rates](https://watchcerti.com/blogs/news/what-is-a-watch-certificate-of-authenticity-a-complete-guide)
 - [Investment Watches — authentication $150](https://www.investmentwatches.com/pages/authentication)
 - [eBay Money Back Guarantee policy](https://www.ebay.com/help/policies/ebay-money-back-guarantee-policy/ebay-money-back-guarantee-policy?id=4210)
+
+---
+
+## Photos: which images may represent which watch
+
+**New / unworn stock with manufacturer imagery is standard practice** and works fine —
+a press image of a new watch accurately shows what arrives. Two parts of it need
+separating though.
+
+### The copyright part
+
+- **"The person who takes photos owns the copyright to those photos."** Another
+  seller's listing images are theirs. eBay won't even mediate seller-to-seller image
+  disputes — that's a DMCA matter.
+- **Manufacturer images aren't automatically free either.** eBay's own guidance:
+  *"you can't use images or videos from a manufacturer's website, even if it is
+  publicly available."* Brands do license imagery to retailers through media kits and
+  dealer portals — you just have to obtain it. One email, once per brand.
+
+### The accuracy part — and it mirrors your own rule
+
+`deal.ts` already has a hard reject gate called **`STOCK_PHOTOS`**: we refuse to buy an
+eBay listing that shows a *used* watch with the manufacturer's press photo, because
+it's a fraud signal roughly nine times in ten.
+
+That's the same judgement a customer would be making about us. So the rule is just
+that gate applied in the other direction:
+
+| Photos | New / unworn | Pre-owned |
+|---|---|---|
+| **We shot them** | ✅ | ✅ |
+| **Manufacturer, licensed** | ✅ with disclosure | ❌ |
+| **Source seller's, with permission** | ✅ with credit | ❌ |
+| **Taken without permission** | ❌ | ❌ |
+
+On disputes: issuers *"lean toward the cardholder unless the merchant has firm
+evidence"*, and you must *"demonstrate that what they received matched your accurate
+description."* A photo of a different example isn't evidence about this one — which is
+exactly the gap INAD lives in, and INAD is the category 3D Secure doesn't cover.
+
+### Retouching
+
+Colour and exposure correction on real images of **that** watch is normal product
+photography — `reviewPhotoSet()` allows it and just asks you to keep the originals.
+Editing out marks is the misdescription the chargeback is built on, and it's blocked.
+
+### The practical route for watches you never handle
+
+**Ask the source seller for permission to reuse their photos.** Costs a message, many
+say yes, and it's the difference between images you can defend and images you can't.
+`SOURCE_SELLER_PERMISSION_REQUEST` has the wording. Do it before the listing goes up.
+
+Combined with the routing rules in [docs/13](13-fulfilment-routing.md), that gives you
+a coherent lane: **direct-ship new/unworn stock with licensed or permitted imagery**,
+and anything pre-owned comes through you and gets photographed.
