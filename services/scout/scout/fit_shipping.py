@@ -44,10 +44,11 @@ import sys
 
 from . import config
 from .economics import compute_economics, shipping_cost
-from .shipping import Address, Parcel, ShippoClient, cheapest_acceptable
+from .shipping import Address, Parcel, ShippoClient, cheapest_acceptable, parcel_for
 
-#: Declared values to quote, one per band the engine trades.
-BANDS = [30, 100, 300, 800, 1500, 3000, 8000]
+#: Declared values to quote, one per band the engine trades. 30 and 45 both sit in
+#: the envelope band; 60 is the first boxed one, so the pair straddles the switch.
+BANDS = [30, 45, 60, 100, 300, 800, 1500, 3000, 8000]
 
 #: Destinations sampled to average across zones. Same-state, mid, and coast-to-coast.
 SAMPLE_DESTINATIONS = [
@@ -69,10 +70,16 @@ def max_days_for(value: float) -> int:
     return 5 if value < 1000 else 3
 
 
-def sweep(client: ShippoClient, origin: Address, parcel: Parcel) -> dict[int, float]:
-    """Median real quote per band, across the sampled zones."""
+def sweep(client: ShippoClient, origin: Address, box: Parcel) -> dict[int, float]:
+    """Median real quote per band, across the sampled zones.
+
+    Each band is quoted with the parcel we would actually use for it -- a mailer
+    below $50, the box above -- so the fitted curve reflects real packaging rather
+    than one averaged shape.
+    """
     fitted: dict[int, float] = {}
     for value in BANDS:
+        parcel = box if value >= 50 else parcel_for(value)
         quotes: list[float] = []
         for dest in SAMPLE_DESTINATIONS:
             try:
@@ -151,7 +158,8 @@ def emit_constants(fitted: dict[int, float]) -> str:
     def at(band: int, default: float) -> float:
         return fitted.get(band, default)
 
-    ground = at(30, 8.5)
+    envelope = at(30, 4.75)
+    ground = at(60, 8.5)
     priority = max(at(300, 11.0) - 2.65, ground)
     express = max(at(1500, 28.0) - 12.6, priority)
     registered = max(at(8000, 45.0) - 40.0, express)
@@ -160,6 +168,8 @@ def emit_constants(fitted: dict[int, float]) -> str:
     return "\n".join([
         "// packages/core/src/economics.ts — measured, not assumed",
         "export const DEFAULT_SHIPPING: ShippingCurve = {",
+        f"  envelopeUsd: {envelope:.2f},",
+        "  envelopeThresholdUsd: 50,",
         f"  groundAdvantageUsd: {ground:.2f},",
         f"  priorityUsd: {priority:.2f},",
         f"  priorityExpressUsd: {express:.2f},",
@@ -174,6 +184,8 @@ def emit_constants(fitted: dict[int, float]) -> str:
         "};",
         "",
         "# services/scout/scout/config.py — keep both engines in step",
+        f"    envelope_usd: float = {envelope:.2f}",
+        "    envelope_threshold_usd: float = 50.0",
         f"    ground_advantage_usd: float = {ground:.2f}",
         f"    priority_usd: float = {priority:.2f}",
         f"    priority_express_usd: float = {express:.2f}",

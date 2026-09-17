@@ -108,6 +108,14 @@ export function discountToMarket(sourcePriceUsd: number, marketPriceUsd: number)
  * deal in the book, because this cost sits on every unit.
  */
 export interface ShippingCurve {
+  /**
+   * Padded mailer for cheap watches. Under ~8oz it is roughly half a boxed 1.5 lb
+   * parcel, and averaging the two together overstates cost on exactly the band where
+   * a few dollars is most of the contribution.
+   */
+  envelopeUsd: number;
+  /** Declared value below which we ship in an envelope rather than a box. */
+  envelopeThresholdUsd: number;
   /** Postage by service level, chosen by value. */
   groundAdvantageUsd: number;
   priorityUsd: number;
@@ -127,6 +135,8 @@ export interface ShippingCurve {
 }
 
 export const DEFAULT_SHIPPING: ShippingCurve = {
+  envelopeUsd: 4.75,
+  envelopeThresholdUsd: 50,
   groundAdvantageUsd: 8.5,
   priorityUsd: 11.0,
   priorityExpressUsd: 28.0,
@@ -147,13 +157,15 @@ export function shippingCostUsd(
   const v = Math.max(0, declaredValueUsd);
 
   const postage =
-    v < 250
-      ? curve.groundAdvantageUsd
-      : v < 1000
-        ? curve.priorityUsd
-        : v < curve.registeredThresholdUsd
-          ? curve.priorityExpressUsd
-          : curve.registeredUsd;
+    v < curve.envelopeThresholdUsd
+      ? curve.envelopeUsd
+      : v < 250
+        ? curve.groundAdvantageUsd
+        : v < 1000
+          ? curve.priorityUsd
+          : v < curve.registeredThresholdUsd
+            ? curve.priorityExpressUsd
+            : curve.registeredUsd;
 
   const signature =
     v < 250 ? 0 : v < 1000 ? curve.signatureConfirmationUsd : curve.adultSignatureUsd;
@@ -172,6 +184,7 @@ export function shippingCostUsd(
 
 /** Packaging scales gently with value: a mailer, then a box, then a box in a box. */
 export function packagingCostUsd(orderValueUsd: number): number {
+  if (orderValueUsd < 50) return 0.75; // padded mailer only
   if (orderValueUsd < 250) return 1.5;
   if (orderValueUsd < 1000) return 4.0;
   if (orderValueUsd < 5000) return 9.0;

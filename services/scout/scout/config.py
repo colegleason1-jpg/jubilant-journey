@@ -61,6 +61,9 @@ class Pricing:
     epn_commission_rate: float = field(default_factory=lambda: _f("EPN_COMMISSION_RATE", 0.0))
 
     # ── shipping cost curve, fitted to published USPS rates ──────────────────────
+    #: Padded mailer for cheap watches; roughly half a boxed 1.5 lb parcel.
+    envelope_usd: float = 4.75
+    envelope_threshold_usd: float = 50.0
     ground_advantage_usd: float = 8.50
     priority_usd: float = 11.00
     priority_express_usd: float = 28.00

@@ -42,9 +42,15 @@ SHIPPO_BASE = "https://api.goshippo.com"
 class Parcel:
     """A packed watch.
 
-    Defaults describe a watch in a travel case, boxed, inside an outer box with
-    padding -- the packaging the intake SOP specifies. Weight matters less than you
-    would expect below 1 lb; dimensions and zone drive most of the price.
+    Two presets, because they price very differently and averaging them overstates
+    cost on the band where a few dollars is most of the contribution:
+
+        ENVELOPE  under $50 -- padded mailer, under 8oz
+        BOX       $50 and up -- travel case, boxed, inside an outer box with padding,
+                  which is what the intake SOP specifies
+
+    Dimensions and zone drive most of the price; weight matters less than expected
+    below a pound.
     """
 
     length_in: float = 8.0
@@ -61,6 +67,21 @@ class Parcel:
             "weight": str(self.weight_lb),
             "mass_unit": "lb",
         }
+
+
+#: Padded mailer for cheap watches.
+ENVELOPE = Parcel(length_in=9.0, width_in=6.0, height_in=1.0, weight_lb=0.5)
+
+#: Boxed watch: travel case, bubble, inner box, outer box.
+BOX = Parcel(length_in=8.0, width_in=6.0, height_in=4.0, weight_lb=1.5)
+
+#: Declared value at or above which we box rather than use a mailer.
+ENVELOPE_THRESHOLD_USD = 50.0
+
+
+def parcel_for(declared_value_usd: float) -> Parcel:
+    """Mirrors the curve in economics.py -- envelope below $50, box above."""
+    return ENVELOPE if declared_value_usd < ENVELOPE_THRESHOLD_USD else BOX
 
 
 @dataclass(frozen=True)

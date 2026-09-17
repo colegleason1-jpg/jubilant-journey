@@ -119,16 +119,23 @@ class TestReportAndConstants(unittest.TestCase):
         self.assertIn("before spending", text)
 
     def test_emits_constants_for_both_engines(self):
-        out = emit_constants({30: 6.10, 300: 12.40, 800: 15.90, 1500: 24.30, 8000: 68.20})
+        out = emit_constants(
+            {30: 4.60, 60: 8.20, 300: 12.40, 800: 15.90, 1500: 24.30, 8000: 68.20}
+        )
         self.assertIn("DEFAULT_SHIPPING", out)
-        self.assertIn("groundAdvantageUsd: 6.10", out)
+        # The sub-$50 quote fits the envelope; the $60 one fits Ground Advantage.
+        self.assertIn("envelopeUsd: 4.60", out)
+        self.assertIn("groundAdvantageUsd: 8.20", out)
         self.assertIn("ground_advantage_usd", out)
 
     def test_constants_stay_monotonic_by_service_level(self):
-        out = emit_constants({30: 6.10, 300: 12.40, 800: 15.90, 1500: 24.30, 8000: 68.20})
+        out = emit_constants(
+            {30: 4.60, 60: 8.20, 300: 12.40, 800: 15.90, 1500: 24.30, 8000: 68.20}
+        )
         def val(key: str) -> float:
             line = next(l for l in out.splitlines() if key in l)
             return float(line.split(":")[1].strip().rstrip(","))
+        self.assertLessEqual(val("envelopeUsd"), val("groundAdvantageUsd"))
         self.assertLessEqual(val("groundAdvantageUsd"), val("priorityUsd"))
         self.assertLessEqual(val("priorityUsd"), val("priorityExpressUsd"))
         self.assertLessEqual(val("priorityExpressUsd"), val("registeredUsd"))
@@ -191,3 +198,28 @@ class TestManualQuoteEntry(unittest.TestCase):
         from scout.fit_shipping import emit_constants, parse_quotes
         # Somebody quotes three bands and stops. That should still be useful.
         self.assertIn("DEFAULT_SHIPPING", emit_constants(parse_quotes("30=6,300=12,1500=24")))
+
+
+class TestParcelPresets(unittest.TestCase):
+    def test_envelope_below_fifty_box_above(self):
+        from scout.shipping import BOX, ENVELOPE, parcel_for
+        self.assertEqual(parcel_for(30), ENVELOPE)
+        self.assertEqual(parcel_for(49.99), ENVELOPE)
+        self.assertEqual(parcel_for(50), BOX)
+        self.assertEqual(parcel_for(1500), BOX)
+
+    def test_the_envelope_is_lighter_and_flatter(self):
+        from scout.shipping import BOX, ENVELOPE
+        self.assertLess(ENVELOPE.weight_lb, BOX.weight_lb)
+        self.assertLess(ENVELOPE.height_in, BOX.height_in)
+
+    def test_the_sweep_straddles_the_switch(self):
+        from scout.fit_shipping import BANDS
+        self.assertTrue(any(b < 50 for b in BANDS))
+        self.assertIn(60, BANDS)
+
+    def test_emitted_constants_include_the_envelope(self):
+        from scout.fit_shipping import emit_constants
+        out = emit_constants({30: 4.60, 60: 8.20, 300: 12.40, 1500: 24.30})
+        self.assertIn("envelopeUsd: 4.60", out)
+        self.assertIn("envelope_usd: float = 4.60", out)

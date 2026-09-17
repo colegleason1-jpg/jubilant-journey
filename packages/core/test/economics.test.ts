@@ -234,3 +234,32 @@ describe('eBay Partner Network credit', () => {
     assert.equal(e.epnCreditUsd, 10.8);
   });
 });
+
+describe('the envelope band', () => {
+  test('a watch under $50 ships in a mailer, not a box', () => {
+    assert.ok(shippingCostUsd(30) < shippingCostUsd(60));
+    assert.equal(shippingCostUsd(30), shippingCostUsd(49));
+  });
+
+  test('the switch happens exactly at $50', () => {
+    assert.ok(shippingCostUsd(50) > shippingCostUsd(49.99));
+  });
+
+  test('packaging switches with it', () => {
+    assert.ok(packagingCostUsd(30) < packagingCostUsd(60));
+  });
+
+  test('the curve stays monotonic across the switch', () => {
+    const values = [25, 49, 50, 80, 200, 400, 900, 1500, 3000, 8000];
+    const costs = values.map((v) => shippingCostUsd(v) + packagingCostUsd(v));
+    for (let i = 1; i < costs.length; i++) {
+      assert.ok(costs[i]! >= costs[i - 1]!, `${values[i]} should not cost less than ${values[i - 1]}`);
+    }
+  });
+
+  test('it materially improves the cheap band', () => {
+    // A few dollars is most of the contribution down here.
+    const e = computeEconomics({ sourcePriceUsd: 14, listPriceUsd: 29, authenticationUsd: 0 });
+    assert.ok(e.contributionUsd > 8, `contribution ${e.contributionUsd}`);
+  });
+});

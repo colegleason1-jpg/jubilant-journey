@@ -67,7 +67,12 @@ def shipping_cost(declared_value_usd: float, cfg) -> float:
     """
     v = max(0.0, declared_value_usd)
 
-    if v < 250:
+    if v < cfg.envelope_threshold_usd:
+        # Padded mailer. Under ~8oz it is roughly half a boxed 1.5 lb parcel, and
+        # averaging the two overstates cost on the band where a few dollars is most
+        # of the contribution.
+        postage = cfg.envelope_usd
+    elif v < 250:
         postage = cfg.ground_advantage_usd
     elif v < 1000:
         postage = cfg.priority_usd
@@ -96,6 +101,8 @@ def shipping_cost(declared_value_usd: float, cfg) -> float:
 
 def packaging_cost(order_value_usd: float) -> float:
     """A mailer, then a box, then a box in a box."""
+    if order_value_usd < 50:
+        return 0.75  # padded mailer only
     if order_value_usd < 250:
         return 1.5
     if order_value_usd < 1000:
