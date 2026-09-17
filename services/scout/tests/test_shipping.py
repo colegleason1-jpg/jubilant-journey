@@ -201,17 +201,50 @@ class TestManualQuoteEntry(unittest.TestCase):
 
 
 class TestParcelPresets(unittest.TestCase):
-    def test_envelope_below_fifty_box_above(self):
-        from scout.shipping import BOX, ENVELOPE, parcel_for
+    def test_parcel_tracks_what_comes_with_the_watch(self):
+        from scout.shipping import BOX_FULL_SET, BOX_LIGHT, BOX_STANDARD, ENVELOPE, parcel_for
         self.assertEqual(parcel_for(30), ENVELOPE)
         self.assertEqual(parcel_for(49.99), ENVELOPE)
-        self.assertEqual(parcel_for(50), BOX)
-        self.assertEqual(parcel_for(1500), BOX)
+        self.assertEqual(parcel_for(50), BOX_LIGHT)       # travel case only
+        self.assertEqual(parcel_for(299), BOX_LIGHT)
+        self.assertEqual(parcel_for(300), BOX_STANDARD)   # original box + papers
+        self.assertEqual(parcel_for(1000), BOX_FULL_SET)  # presentation box
+
+    def test_weight_rises_monotonically_with_value(self):
+        from scout.shipping import parcel_for
+        weights = [parcel_for(v).weight_lb for v in (30, 60, 400, 1500, 8000)]
+        for a, b in zip(weights, weights[1:]):
+            self.assertLessEqual(a, b)
+
+    def test_the_light_box_stays_under_a_pound(self):
+        from scout.shipping import BOX_LIGHT, usps_weight_tier
+        # Under 16 oz keeps this band on ounce tiers instead of pound rates.
+        self.assertLess(BOX_LIGHT.weight_lb, 1.0)
+        self.assertNotIn("lb", usps_weight_tier(BOX_LIGHT.weight_lb))
 
     def test_the_envelope_is_lighter_and_flatter(self):
-        from scout.shipping import BOX, ENVELOPE
-        self.assertLess(ENVELOPE.weight_lb, BOX.weight_lb)
-        self.assertLess(ENVELOPE.height_in, BOX.height_in)
+        from scout.shipping import BOX_STANDARD, ENVELOPE
+        self.assertLess(ENVELOPE.weight_lb, BOX_STANDARD.weight_lb)
+        self.assertLess(ENVELOPE.height_in, BOX_STANDARD.height_in)
+
+
+class TestWeightTiers(unittest.TestCase):
+    def test_usps_rounds_up_to_ounce_tiers_under_a_pound(self):
+        from scout.shipping import usps_weight_tier
+        self.assertEqual(usps_weight_tier(3.5 / 16), "4oz")
+        self.assertEqual(usps_weight_tier(4.2 / 16), "8oz")   # pays the 8oz price
+        self.assertEqual(usps_weight_tier(8.5 / 16), "12oz")  # half an ounce = a tier
+        self.assertEqual(usps_weight_tier(7.9 / 16), "8oz")
+
+    def test_sixteen_ounces_is_a_cliff(self):
+        from scout.shipping import usps_weight_tier
+        self.assertEqual(usps_weight_tier(15.9 / 16), "15.999oz")
+        self.assertEqual(usps_weight_tier(16.1 / 16), "2lb")
+
+    def test_pound_rates_round_up(self):
+        from scout.shipping import usps_weight_tier
+        self.assertEqual(usps_weight_tier(2.0), "2lb")
+        self.assertEqual(usps_weight_tier(2.1), "3lb")
 
     def test_the_sweep_straddles_the_switch(self):
         from scout.fit_shipping import BANDS

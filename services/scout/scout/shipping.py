@@ -69,19 +69,74 @@ class Parcel:
         }
 
 
-#: Padded mailer for cheap watches.
-ENVELOPE = Parcel(length_in=9.0, width_in=6.0, height_in=1.0, weight_lb=0.5)
+# ── Parcel presets, from actual packed weights ──────────────────────────────────
+#
+# A watch alone averages ~200g (7.05 oz) and barely varies. What moves the weight is
+# what comes WITH it:
+#
+#   mailer            +1.5-2 oz          -> ~8.5-9 oz total
+#   light box         travel case only   -> under 1 lb
+#   original box      box + papers       -> 2-3 lb
+#   full set          presentation box   -> 3-5 lb, typical above $1k
+#
+# This matters more than it looks. The curve previously assumed 1.5 lb for every
+# boxed parcel, which UNDERSTATES cost on most of them -- the dangerous direction,
+# because it approves deals thinner than they really are.
 
-#: Boxed watch: travel case, bubble, inner box, outer box.
-BOX = Parcel(length_in=8.0, width_in=6.0, height_in=4.0, weight_lb=1.5)
+#: Padded mailer. ~200g watch + 1.5-2 oz of mailer lands at roughly 8.5-9 oz.
+ENVELOPE = Parcel(length_in=9.0, width_in=6.0, height_in=1.0, weight_lb=0.56)
+
+#: Boxed, no original packaging: travel case, bubble, inner box, outer box. Usually
+#: lands UNDER a pound, which matters -- it keeps this band on ounce-tier pricing
+#: instead of jumping to pound rates. Watch it: 16 oz is a cliff, not a slope.
+BOX_LIGHT = Parcel(length_in=8.0, width_in=6.0, height_in=4.0, weight_lb=0.9)
+
+#: Boxed with original box and papers -- the common case above $300.
+BOX_STANDARD = Parcel(length_in=9.0, width_in=7.0, height_in=5.0, weight_lb=3.0)
+
+#: Full set: presentation box, papers, links, outer packaging. Typical above $1k.
+BOX_FULL_SET = Parcel(length_in=10.0, width_in=8.0, height_in=6.0, weight_lb=4.0)
 
 #: Declared value at or above which we box rather than use a mailer.
 ENVELOPE_THRESHOLD_USD = 50.0
 
 
 def parcel_for(declared_value_usd: float) -> Parcel:
-    """Mirrors the curve in economics.py -- envelope below $50, box above."""
-    return ENVELOPE if declared_value_usd < ENVELOPE_THRESHOLD_USD else BOX
+    """The parcel we would actually ship at this value.
+
+    Mirrors the bands in economics.py. Weight climbs with value because expensive
+    watches arrive with their boxes, not because they are heavier watches.
+    """
+    if declared_value_usd < ENVELOPE_THRESHOLD_USD:
+        return ENVELOPE
+    if declared_value_usd < 300:
+        return BOX_LIGHT
+    if declared_value_usd < 1000:
+        return BOX_STANDARD
+    return BOX_FULL_SET
+
+
+#: Backwards-compatible alias. Prefer parcel_for().
+BOX = BOX_STANDARD
+
+
+def usps_weight_tier(weight_lb: float) -> str:
+    """Which USPS Ground Advantage price tier a weight falls into.
+
+    Under a pound, USPS does not price continuously -- it rounds up to 4 oz, 8 oz,
+    12 oz or 15.999 oz, then jumps to pound rates. A parcel at 8.5 oz pays the 12 oz
+    price, so shaving half an ounce of padding can drop a whole tier.
+    """
+    oz = weight_lb * 16
+    if oz <= 4:
+        return "4oz"
+    if oz <= 8:
+        return "8oz"
+    if oz <= 12:
+        return "12oz"
+    if oz < 16:
+        return "15.999oz"
+    return f"{int(-(-oz // 16))}lb"
 
 
 @dataclass(frozen=True)

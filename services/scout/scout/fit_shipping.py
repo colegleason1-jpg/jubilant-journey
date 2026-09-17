@@ -44,11 +44,19 @@ import sys
 
 from . import config
 from .economics import compute_economics, shipping_cost
-from .shipping import Address, Parcel, ShippoClient, cheapest_acceptable, parcel_for
+from .shipping import (
+    Address,
+    Parcel,
+    ShippoClient,
+    cheapest_acceptable,
+    parcel_for,
+    usps_weight_tier,
+)
 
-#: Declared values to quote, one per band the engine trades. 30 and 45 both sit in
-#: the envelope band; 60 is the first boxed one, so the pair straddles the switch.
-BANDS = [30, 45, 60, 100, 300, 800, 1500, 3000, 8000]
+#: Declared values to quote, one per band the engine trades. Chosen to straddle every
+#: parcel switch: 30/45 envelope, 60/200 light box, 300/800 standard box with original
+#: packaging, 1500+ full set.
+BANDS = [30, 45, 60, 200, 300, 800, 1500, 3000, 8000]
 
 #: Destinations sampled to average across zones. Same-state, mid, and coast-to-coast.
 SAMPLE_DESTINATIONS = [
@@ -70,7 +78,7 @@ def max_days_for(value: float) -> int:
     return 5 if value < 1000 else 3
 
 
-def sweep(client: ShippoClient, origin: Address, box: Parcel) -> dict[int, float]:
+def sweep(client: ShippoClient, origin: Address, box: Parcel | None = None) -> dict[int, float]:
     """Median real quote per band, across the sampled zones.
 
     Each band is quoted with the parcel we would actually use for it -- a mailer
@@ -79,7 +87,9 @@ def sweep(client: ShippoClient, origin: Address, box: Parcel) -> dict[int, float
     """
     fitted: dict[int, float] = {}
     for value in BANDS:
-        parcel = box if value >= 50 else parcel_for(value)
+        # Quote with the parcel we would really use, including its real weight --
+        # an expensive watch ships heavier because it arrives with its box.
+        parcel = parcel_for(value)
         quotes: list[float] = []
         for dest in SAMPLE_DESTINATIONS:
             try:
@@ -93,8 +103,8 @@ def sweep(client: ShippoClient, origin: Address, box: Parcel) -> dict[int, float
             best = cheapest_acceptable(rates, max_days=max_days_for(value))
             if best:
                 quotes.append(best.total_usd)
-                print(f"  {value:>6} -> {dest.state}: ${best.total_usd:>7.2f}  "
-                      f"{best.provider} {best.service}")
+                print(f"  {value:>6} ({parcel.weight_lb:>4.2f} lb) -> {dest.state}: "
+                      f"${best.total_usd:>7.2f}  {best.provider} {best.service}")
         if quotes:
             fitted[value] = round(statistics.median(quotes), 2)
     return fitted
@@ -159,7 +169,7 @@ def emit_constants(fitted: dict[int, float]) -> str:
         return fitted.get(band, default)
 
     envelope = at(30, 4.75)
-    ground = at(60, 8.5)
+    ground = at(60, 8.5)  # light box, ~2 lb
     priority = max(at(300, 11.0) - 2.65, ground)
     express = max(at(1500, 28.0) - 12.6, priority)
     registered = max(at(8000, 45.0) - 40.0, express)
@@ -297,16 +307,14 @@ def run(argv: list[str] | None = None) -> int:
                   "SHIP_FROM_STATE, SHIP_FROM_ZIP", file=sys.stderr)
             return 1
 
-        parcel = Parcel(
-            length_in=float(os.environ.get("PARCEL_LENGTH_IN", 8)),
-            width_in=float(os.environ.get("PARCEL_WIDTH_IN", 6)),
-            height_in=float(os.environ.get("PARCEL_HEIGHT_IN", 4)),
-            weight_lb=float(os.environ.get("PARCEL_WEIGHT_LB", 1.5)),
-        )
-        print(f"Quoting {parcel.weight_lb} lb, "
-              f"{parcel.length_in}x{parcel.width_in}x{parcel.height_in} in, "
-              f"from {origin.city} {origin.state} {origin.zip}\n")
-        fitted = sweep(client, origin, parcel)
+        print(f"Quoting from {origin.city} {origin.state} {origin.zip}, "
+              "each band with its real parcel:\n")
+        for band in BANDS:
+            pc = parcel_for(band)
+            print(f"  ${band:>5}  {pc.length_in:>2.0f}x{pc.width_in:.0f}x{pc.height_in:.0f}in "
+                  f"{pc.weight_lb:>5.2f} lb  ({usps_weight_tier(pc.weight_lb)})")
+        print()
+        fitted = sweep(client, origin)
         if not fitted:
             print("No quotes returned. Check the token and the origin address.",
                   file=sys.stderr)
