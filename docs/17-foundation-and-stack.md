@@ -53,11 +53,30 @@ That last row is the one to look at. **The $2,450 deal goes from $3.68 to $33.27
 — purely from commercial shipping rates.** The deal you flagged as being wrongly
 rejected turns out to be genuinely good once the postage is priced correctly.
 
-At our volume (< 30 labels/month) Shippo is **free**. This is the single highest-value
-integration in the plan, and it's an afternoon's work.
+### ⚠️ Don't conflate "measure the rates" with "integrate an API"
 
-> EasyPost was the obvious alternative and is now the wrong one: they cut the free
-> tier in Feb 2026, raised per-label costs ~60%, and added a 3% fee on all USPS spend.
+They're separate problems and only one is urgent.
+
+**Measuring** needs no account: open any rate calculator, quote the bands, type them
+in. Fifteen minutes.
+
+```bash
+python -m scout.fit_shipping --quotes "30=6.10,300=12.40,1500=24.30,8000=68.20"
+```
+
+**Integrating** is a month-three problem — it automates label buying, which at under
+10 labels/month you can do by hand.
+
+| Provider | Cost | Signup | API | Use it for |
+|---|---|---|---|---|
+| **Pirate Ship** | **100% free** — no monthly, no per-label | Instant, self-serve | ❌ none published | ⭐ **Rates now, labels by hand.** At or below USPS Commercial Pricing; they're a licensed USPS Connect eCommerce Platform consolidating small-shipper volume |
+| **Shippo** | Free to 30 labels/mo, then $0.05 | [apps.goshippo.com/join](https://apps.goshippo.com/join) — self-serve | ✅ good | The API later. **Not** the "contact an expert" form on the marketing site |
+| **ShipEngine** | Free developer account | Instant, no card | ✅ sandbox + prod | Alternative API |
+| ~~EasyPost~~ | ~~free tier~~ | — | ✅ | ❌ Cut the free tier Feb 2026, raised per-label ~60%, added 3% on all USPS spend |
+
+**Recommended:** Pirate Ship for rates and hand-bought labels now; add Shippo's API
+when label volume makes the clicking annoying. Migration is a config change — the
+curve constants don't care where the numbers came from.
 
 ---
 

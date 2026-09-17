@@ -1,7 +1,23 @@
 """Replace guessed shipping constants with measured ones.
 
-    python -m scout.fit_shipping --demo     show the report shape, no token
-    python -m scout.fit_shipping            live rate sweep, emits new constants
+    python -m scout.fit_shipping --quotes "30=6.10,300=12.40,1500=24.30"
+                                            type in rates from anywhere. No account.
+    python -m scout.fit_shipping --demo     show the report shape
+    python -m scout.fit_shipping            live Shippo sweep (needs a token)
+
+START WITH --quotes
+-------------------
+The API is for automating labels, which is a month-three problem. What matters NOW is
+knowing what shipping actually costs, and that needs no integration at all: open any
+carrier rate calculator, quote the bands, type the numbers in. Fifteen minutes,
+no signup, and the curve becomes real.
+
+Pirate Ship is the fastest source -- free, no monthly fee, no per-label fee, rates at
+or below USPS Commercial Pricing because they consolidate small-shipper volume as a
+licensed USPS Connect eCommerce Platform. Shippo self-serve (apps.goshippo.com/join)
+also works and has an API when you want one later.
+
+Do not let the integration question block the measurement. They are separate.
 
 WHAT IT DOES
 ------------
@@ -166,9 +182,61 @@ def emit_constants(fitted: dict[int, float]) -> str:
     ])
 
 
+def parse_quotes(spec: str) -> dict[int, float]:
+    """Parse `30=6.10,300=12.40` into fitted points.
+
+    Deliberately forgiving about `$`, spaces and stray commas -- these numbers get
+    typed by hand off a rate calculator, and a parse error is a bad reason to lose
+    fifteen minutes of work.
+    """
+    fitted: dict[int, float] = {}
+    for chunk in spec.replace(";", ",").split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        if "=" not in chunk:
+            raise ValueError(f"expected value=cost, got {chunk!r}")
+        left, right = chunk.split("=", 1)
+        band = int(float(left.strip().lstrip("$").replace(",", "")))
+        cost = float(right.strip().lstrip("$").replace(",", ""))
+        if cost <= 0:
+            raise ValueError(f"cost must be positive, got {cost} for band {band}")
+        fitted[band] = round(cost, 2)
+    if not fitted:
+        raise ValueError("no quotes parsed")
+    return fitted
+
+
+def _quotes_flag(argv: list[str]) -> str | None:
+    for i, arg in enumerate(argv):
+        if arg == "--quotes" and i + 1 < len(argv):
+            return argv[i + 1]
+        if arg.startswith("--quotes="):
+            return arg.split("=", 1)[1]
+    return None
+
+
 def run(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     cfg = config.load()
+
+    spec = _quotes_flag(argv)
+    if spec is not None:
+        try:
+            fitted = parse_quotes(spec)
+        except ValueError as exc:
+            print(f"Could not parse --quotes: {exc}", file=sys.stderr)
+            print('Format: --quotes "30=6.10,300=12.40,1500=24.30"', file=sys.stderr)
+            return 1
+        print(f"Fitting from {len(fitted)} hand-entered quotes.\n")
+        print(report(fitted, cfg))
+        print()
+        print("PROPOSED CONSTANTS")
+        print("=" * 70)
+        print(emit_constants(fitted))
+        print()
+        print("Change BOTH engines together, then run both test suites.")
+        return 0
 
     if "--demo" in argv:
         print("(demo numbers — illustrative only, do NOT copy into config)\n")
@@ -176,12 +244,22 @@ def run(argv: list[str] | None = None) -> int:
     else:
         client = ShippoClient()
         if not client.configured:
-            print("SHIPPO_API_TOKEN is not set.", file=sys.stderr)
-            print("Get one free at goshippo.com (Starter: 30 labels/month, no card).",
+            print("SHIPPO_API_TOKEN is not set.\n", file=sys.stderr)
+            print("You almost certainly do not need it yet. Quote the bands on any",
                   file=sys.stderr)
-            print("Then: export SHIPPO_API_TOKEN=shippo_live_... "
-                  "(or shippo_test_... to dry-run)", file=sys.stderr)
-            print("\nMeanwhile: --demo shows the report shape.", file=sys.stderr)
+            print("rate calculator and type them in -- no account, no integration:",
+                  file=sys.stderr)
+            print('\n  python -m scout.fit_shipping --quotes "30=6.10,100=6.85,'
+                  '300=12.40,800=15.90,1500=24.30,3000=31.75,8000=68.20"\n',
+                  file=sys.stderr)
+            print("Fastest source: pirateship.com — free, no monthly fee, no",
+                  file=sys.stderr)
+            print("per-label fee, at or below USPS Commercial Pricing.\n",
+                  file=sys.stderr)
+            print("For the API later: apps.goshippo.com/join (self-serve, free",
+                  file=sys.stderr)
+            print("Starter, 30 labels/month — NOT the 'contact an expert' form).",
+                  file=sys.stderr)
             return 1
 
         origin = _origin_from_env()

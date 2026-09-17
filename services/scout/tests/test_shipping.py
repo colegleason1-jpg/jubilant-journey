@@ -150,3 +150,37 @@ class TestClientConfiguration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestManualQuoteEntry(unittest.TestCase):
+    """The path that needs no account, no token and no integration."""
+
+    def test_parses_the_basic_form(self):
+        from scout.fit_shipping import parse_quotes
+        self.assertEqual(parse_quotes("30=6.10,300=12.40"), {30: 6.10, 300: 12.40})
+
+    def test_forgives_hand_typing(self):
+        from scout.fit_shipping import parse_quotes
+        # These get typed off a rate calculator; a parse error is a bad reason to
+        # lose fifteen minutes of work.
+        self.assertEqual(
+            parse_quotes(" $30 = $6.10 ; 1,500=$24.30 , "),
+            {30: 6.10, 1500: 24.30},
+        )
+
+    def test_rejects_nonsense_clearly(self):
+        from scout.fit_shipping import parse_quotes
+        for bad in ["", "30", "30=0", "30=-4"]:
+            with self.assertRaises(ValueError):
+                parse_quotes(bad)
+
+    def test_flag_is_read_in_both_spellings(self):
+        from scout.fit_shipping import _quotes_flag
+        self.assertEqual(_quotes_flag(["--quotes", "30=6"]), "30=6")
+        self.assertEqual(_quotes_flag(["--quotes=30=6"]), "30=6")
+        self.assertIsNone(_quotes_flag(["--demo"]))
+
+    def test_a_partial_sweep_still_produces_constants(self):
+        from scout.fit_shipping import emit_constants, parse_quotes
+        # Somebody quotes three bands and stops. That should still be useful.
+        self.assertIn("DEFAULT_SHIPPING", emit_constants(parse_quotes("30=6,300=12,1500=24")))

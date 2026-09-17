@@ -89,10 +89,12 @@ cd services/scout  && python -m scout.fit_shipping --demo   # curve vs real rate
 Engine and scanner are built and tested. **Nothing has run against live data.** Every
 threshold is still an untested guess.
 
-**Phase 0 in progress** ([docs/17](docs/17-foundation-and-stack.md)): the Shippo
-client and `fit_shipping` are built and tested; they need a token and an origin
-address to produce real numbers. Do this BEFORE shadow mode, so shadow data records
-against real shipping costs rather than retail ones — otherwise you calibrate against
-a cost that is wrong on every unit.
+**Phase 0 in progress** ([docs/17](docs/17-foundation-and-stack.md)): the shipping
+curve is still fitted to USPS RETAIL rates and overstates cost on every unit. Fixing
+it needs no account and no API — quote the bands on any rate calculator and run
+`fit_shipping --quotes "30=6.10,300=12.40,…"`. Do this BEFORE shadow mode, or every
+threshold gets calibrated against a cost that is wrong everywhere.
+
+Label automation is separate and is a month-three problem.
 
 Then shadow mode — [docs/16](docs/16-shadow-mode-runbook.md).
