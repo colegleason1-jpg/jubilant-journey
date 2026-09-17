@@ -48,7 +48,9 @@ from .shipping import (
     Address,
     Parcel,
     ShippoClient,
+    billable_weight_lb,
     cheapest_acceptable,
+    cubic_tier,
     parcel_for,
     usps_weight_tier,
 )
@@ -311,9 +313,16 @@ def run(argv: list[str] | None = None) -> int:
               "each band with its real parcel:\n")
         for band in BANDS:
             pc = parcel_for(band)
+            billable, basis = billable_weight_lb(pc)
+            tier = cubic_tier(pc)
             print(f"  ${band:>5}  {pc.length_in:>2.0f}x{pc.width_in:.0f}x{pc.height_in:.0f}in "
-                  f"{pc.weight_lb:>5.2f} lb  ({usps_weight_tier(pc.weight_lb)})")
+                  f"{pc.weight_lb:>5.2f} lb -> bills {billable:>5.2f} lb "
+                  f"({usps_weight_tier(billable)}), {basis}"
+                  + (f"  |  CUBIC {tier}" if tier else ""))
         print()
+        print("All parcels qualify for Cubic pricing -- ask your platform for BOTH")
+        print("weight-based and Cubic quotes and take the cheaper. Cubic ignores")
+        print("weight under 20 lb, so it usually wins on the heavier bands.\n")
         fitted = sweep(client, origin)
         if not fitted:
             print("No quotes returned. Check the token and the origin address.",

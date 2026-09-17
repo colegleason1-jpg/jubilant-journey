@@ -74,6 +74,41 @@ python -m scout.fit_shipping --quotes "30=6.10,300=12.40,1500=24.30,8000=68.20"
 | **ShipEngine** | Free developer account | Instant, no card | ✅ sandbox + prod | Alternative API |
 | ~~EasyPost~~ | ~~free tier~~ | — | ✅ | ❌ Cut the free tier Feb 2026, raised per-label ~60%, added 3% on all USPS spend |
 
+### How USPS actually bills a watch parcel
+
+Two rules, and the second is worth real money.
+
+**Dimensional weight never applies to us.** USPS bills the greater of actual and
+dimensional weight — but only on packages **over 1 cubic foot (1,728 cu in)**. Our
+largest parcel is 10×8×6 = **480 cu in**. Actual weight always wins. (The divisor
+moved 166 → 139 on 2026-07-12, which would bite if we were anywhere near the
+threshold. We aren't.)
+
+**⭐ Every watch parcel qualifies for USPS Cubic pricing.** Eligibility is ≤0.5 cu ft,
+≤20 lb, longest side ≤22 in — we clear all three with room to spare:
+
+| Band | Parcel | Volume | Weight | Cubic tier |
+|---|---|---:|---:|---|
+| < $50 | 9×6×1 | 54 cu in | 0.56 lb | 0.1 cu ft |
+| $50–300 | 8×6×4 | 192 cu in | 0.90 lb | 0.2 cu ft |
+| $300–1k | 9×7×5 | 315 cu in | 3.00 lb | 0.2 cu ft |
+| $1k+ | 10×8×6 | 480 cu in | 4.00 lb | 0.3 cu ft |
+
+Cubic prices by **volume and zone only — weight is irrelevant under 20 lb.** A 4 lb
+parcel costs the same as a 1 lb one of the same size, and it runs **20–40% cheaper**
+than weight-based for small dense packages. Watches are the textbook case: "anything
+that packs a lot of weight into a shoebox-sized carton."
+
+**This inverts the optimisation on the boxed bands.** Under weight-based pricing you
+shave ounces; under Cubic you shave **box volume** and the weight stops mattering.
+Dropping the $1k+ parcel from 10×8×6 to 9×7×5 would move it from the 0.3 tier to 0.2.
+
+Cubic requires a commercial label through a platform — Pirate Ship qualifies, retail
+post office counters don't.
+
+**Quote both and take the cheaper.** `fit_shipping` prints the eligibility and tier
+for every band before sweeping.
+
 **Decided: Pirate Ship, labels bought by hand.** There's already a label printer, so
 the API buys nothing at this volume — it would be a dependency, an account and a
 failure mode in exchange for saving a few clicks a week. Revisit only when the

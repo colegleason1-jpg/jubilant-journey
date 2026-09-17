@@ -120,6 +120,81 @@ def parcel_for(declared_value_usd: float) -> Parcel:
 BOX = BOX_STANDARD
 
 
+# ── How USPS decides what to bill ───────────────────────────────────────────────
+
+#: USPS applies dimensional weight only ABOVE one cubic foot.
+USPS_DIM_THRESHOLD_CU_IN = 1728.0
+
+#: Divisor moved 166 -> 139 on 2026-07-12, aligning USPS with UPS and FedEx.
+USPS_DIM_DIVISOR = 139.0
+
+#: Cubic pricing: <= 0.5 cu ft, <= 20 lb, longest side <= 22 in (raised from 18
+#: on 2026-07-12). Priced by VOLUME AND ZONE ONLY -- weight is irrelevant under
+#: 20 lb, so a 4 lb parcel costs the same as a 1 lb one of the same size.
+USPS_CUBIC_MAX_CU_FT = 0.5
+USPS_CUBIC_MAX_WEIGHT_LB = 20.0
+USPS_CUBIC_MAX_SIDE_IN = 22.0
+
+
+def cubic_inches(parcel: Parcel) -> float:
+    """Volume. USPS rounds each fractional dimension up to the next whole inch."""
+    import math
+
+    return (
+        math.ceil(parcel.length_in)
+        * math.ceil(parcel.width_in)
+        * math.ceil(parcel.height_in)
+    )
+
+
+def dim_weight_lb(parcel: Parcel, divisor: float = USPS_DIM_DIVISOR) -> float:
+    return round(cubic_inches(parcel) / divisor, 2)
+
+
+def billable_weight_lb(parcel: Parcel) -> tuple[float, str]:
+    """(weight USPS bills, why).
+
+    Watches are small and dense, so actual weight wins essentially always -- a
+    watch parcel never approaches a cubic foot. Confirmed rather than assumed,
+    because getting this backwards would misprice every unit.
+    """
+    volume = cubic_inches(parcel)
+    if volume <= USPS_DIM_THRESHOLD_CU_IN:
+        return parcel.weight_lb, f"actual ({volume:.0f} cu in, under 1 cu ft)"
+    dim = dim_weight_lb(parcel)
+    if dim > parcel.weight_lb:
+        return dim, f"dimensional ({volume:.0f} cu in / {USPS_DIM_DIVISOR:.0f})"
+    return parcel.weight_lb, "actual (heavier than dimensional)"
+
+
+def cubic_eligible(parcel: Parcel) -> bool:
+    """Does this parcel qualify for USPS Cubic pricing?
+
+    Cubic is the best deal in the USPS lineup for small dense packages, which is
+    exactly what a boxed watch is. It ignores weight entirely below 20 lb, so the
+    lever becomes BOX VOLUME rather than what you put in it.
+
+    Requires a commercial label through a shipping platform -- it is not sold at
+    retail post office counters.
+    """
+    return (
+        cubic_inches(parcel) / 1728.0 <= USPS_CUBIC_MAX_CU_FT
+        and parcel.weight_lb <= USPS_CUBIC_MAX_WEIGHT_LB
+        and max(parcel.length_in, parcel.width_in, parcel.height_in)
+        <= USPS_CUBIC_MAX_SIDE_IN
+    )
+
+
+def cubic_tier(parcel: Parcel) -> str | None:
+    """Which cubic tier, if eligible. Tiers step every 0.1 cu ft up to 0.5."""
+    if not cubic_eligible(parcel):
+        return None
+    cu_ft = cubic_inches(parcel) / 1728.0
+    import math
+
+    return f"{max(0.1, math.ceil(cu_ft * 10) / 10):.1f} cu ft"
+
+
 def usps_weight_tier(weight_lb: float) -> str:
     """Which USPS Ground Advantage price tier a weight falls into.
 

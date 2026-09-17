@@ -95,6 +95,12 @@ it needs no account and no API — quote the bands on any rate calculator and ru
 `fit_shipping --quotes "30=6.10,300=12.40,…"`. Do this BEFORE shadow mode, or every
 threshold gets calibrated against a cost that is wrong everywhere.
 
+**Shipping facts worth not re-deriving:** USPS dimensional weight only applies above
+1 cu ft and our largest parcel is 480 cu in, so actual weight always bills. All four
+parcel presets qualify for USPS **Cubic pricing**, which ignores weight under 20 lb
+and prices on volume and zone alone — usually 20–40% cheaper on the heavier bands, so
+quote both. Under a pound, Ground Advantage rounds up to 4/8/12/15.999 oz tiers.
+
 Label automation is **deliberately not being built** — labels are bought by hand on
 Pirate Ship with an existing label printer. `scout/shipping.py` exists and is tested
 for the day volume justifies it, and is not on the critical path.

@@ -256,3 +256,62 @@ class TestWeightTiers(unittest.TestCase):
         out = emit_constants({30: 4.60, 60: 8.20, 300: 12.40, 1500: 24.30})
         self.assertIn("envelopeUsd: 4.60", out)
         self.assertIn("envelope_usd: float = 4.60", out)
+
+
+class TestBillableWeight(unittest.TestCase):
+    """USPS bills the greater of actual and dimensional -- but only above 1 cu ft."""
+
+    def test_dimensional_never_applies_to_a_watch_parcel(self):
+        from scout.shipping import billable_weight_lb, parcel_for
+        for value in (25, 60, 300, 1500, 8000):
+            parcel = parcel_for(value)
+            weight, basis = billable_weight_lb(parcel)
+            self.assertEqual(weight, parcel.weight_lb, f"${value}")
+            self.assertIn("actual", basis)
+
+    def test_every_parcel_is_well_under_the_threshold(self):
+        from scout.shipping import USPS_DIM_THRESHOLD_CU_IN, cubic_inches, parcel_for
+        for value in (25, 60, 300, 1500):
+            self.assertLess(cubic_inches(parcel_for(value)), USPS_DIM_THRESHOLD_CU_IN / 3)
+
+    def test_dimensional_does_apply_to_something_genuinely_bulky(self):
+        from scout.shipping import Parcel, billable_weight_lb
+        # 20x20x20 = 8000 cu in, well over a cubic foot, and nearly weightless.
+        weight, basis = billable_weight_lb(Parcel(20, 20, 20, weight_lb=2.0))
+        self.assertGreater(weight, 2.0)
+        self.assertIn("dimensional", basis)
+
+    def test_uses_the_2026_divisor(self):
+        from scout.shipping import USPS_DIM_DIVISOR, Parcel, dim_weight_lb
+        self.assertEqual(USPS_DIM_DIVISOR, 139.0)  # was 166 before 2026-07-12
+        self.assertAlmostEqual(dim_weight_lb(Parcel(10, 10, 10, 1)), 1000 / 139, places=2)
+
+    def test_fractional_dimensions_round_up(self):
+        from scout.shipping import Parcel, cubic_inches
+        self.assertEqual(cubic_inches(Parcel(8.1, 6.2, 4.3, 1)), 9 * 7 * 5)
+
+
+class TestCubicPricing(unittest.TestCase):
+    """Cubic ignores weight under 20 lb -- the lever becomes box volume."""
+
+    def test_every_watch_parcel_qualifies(self):
+        from scout.shipping import cubic_eligible, parcel_for
+        for value in (25, 60, 300, 1500, 8000):
+            self.assertTrue(cubic_eligible(parcel_for(value)), f"${value}")
+
+    def test_tiers_step_by_volume_not_weight(self):
+        from scout.shipping import cubic_tier, parcel_for
+        self.assertEqual(cubic_tier(parcel_for(25)), "0.1 cu ft")
+        self.assertEqual(cubic_tier(parcel_for(1500)), "0.3 cu ft")
+
+    def test_a_heavier_watch_in_the_same_box_is_the_same_tier(self):
+        from scout.shipping import Parcel, cubic_tier
+        light = Parcel(9, 7, 5, weight_lb=1.0)
+        heavy = Parcel(9, 7, 5, weight_lb=12.0)
+        self.assertEqual(cubic_tier(light), cubic_tier(heavy))
+
+    def test_too_bulky_or_too_heavy_is_not_eligible(self):
+        from scout.shipping import Parcel, cubic_eligible
+        self.assertFalse(cubic_eligible(Parcel(14, 12, 10, weight_lb=2)))   # > 0.5 cu ft
+        self.assertFalse(cubic_eligible(Parcel(8, 6, 4, weight_lb=25)))     # > 20 lb
+        self.assertFalse(cubic_eligible(Parcel(24, 4, 4, weight_lb=2)))     # side > 22 in
