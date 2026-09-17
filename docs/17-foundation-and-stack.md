@@ -74,9 +74,13 @@ python -m scout.fit_shipping --quotes "30=6.10,300=12.40,1500=24.30,8000=68.20"
 | **ShipEngine** | Free developer account | Instant, no card | ✅ sandbox + prod | Alternative API |
 | ~~EasyPost~~ | ~~free tier~~ | — | ✅ | ❌ Cut the free tier Feb 2026, raised per-label ~60%, added 3% on all USPS spend |
 
-**Recommended:** Pirate Ship for rates and hand-bought labels now; add Shippo's API
-when label volume makes the clicking annoying. Migration is a config change — the
-curve constants don't care where the numbers came from.
+**Decided: Pirate Ship, labels bought by hand.** There's already a label printer, so
+the API buys nothing at this volume — it would be a dependency, an account and a
+failure mode in exchange for saving a few clicks a week. Revisit only when the
+clicking becomes the bottleneck, which is a good problem to have.
+
+`scout/shipping.py` stays in the repo, tested and unused, for that day. Migration is
+a config change; the curve constants don't care where the numbers came from.
 
 ---
 

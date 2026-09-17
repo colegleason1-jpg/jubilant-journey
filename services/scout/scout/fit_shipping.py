@@ -185,9 +185,13 @@ def emit_constants(fitted: dict[int, float]) -> str:
 def parse_quotes(spec: str) -> dict[int, float]:
     """Parse `30=6.10,300=12.40` into fitted points.
 
-    Deliberately forgiving about `$`, spaces and stray commas -- these numbers get
-    typed by hand off a rate calculator, and a parse error is a bad reason to lose
-    fifteen minutes of work.
+    Forgiving about `$`, whitespace and `;` — these get typed by hand off a rate
+    calculator and a parse error is a bad reason to lose the work.
+
+    NOT forgiving about thousands separators: `1,500=24.30` is genuinely ambiguous
+    because the comma is also the delimiter. Rather than guess, it errors and says
+    what to type instead. A silently misparsed cost would poison every threshold
+    downstream, which is far worse than being told to drop a comma.
     """
     fitted: dict[int, float] = {}
     for chunk in spec.replace(";", ",").split(","):
@@ -195,10 +199,21 @@ def parse_quotes(spec: str) -> dict[int, float]:
         if not chunk:
             continue
         if "=" not in chunk:
-            raise ValueError(f"expected value=cost, got {chunk!r}")
+            raise ValueError(
+                f"expected value=cost, got {chunk!r}. "
+                "If this was a thousands separator, drop it: write 1500, not 1,500 — "
+                "commas separate quotes."
+            )
         left, right = chunk.split("=", 1)
-        band = int(float(left.strip().lstrip("$").replace(",", "")))
-        cost = float(right.strip().lstrip("$").replace(",", ""))
+        try:
+            band = int(float(left.strip().lstrip("$")))
+            cost = float(right.strip().lstrip("$"))
+        except ValueError:
+            raise ValueError(
+                f"could not read {chunk!r} as value=cost. Write plain numbers: 1500=24.30"
+            ) from None
+        if band <= 0:
+            raise ValueError(f"declared value must be positive, got {band}")
         if cost <= 0:
             raise ValueError(f"cost must be positive, got {cost} for band {band}")
         fitted[band] = round(cost, 2)

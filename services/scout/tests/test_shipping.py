@@ -159,18 +159,25 @@ class TestManualQuoteEntry(unittest.TestCase):
         from scout.fit_shipping import parse_quotes
         self.assertEqual(parse_quotes("30=6.10,300=12.40"), {30: 6.10, 300: 12.40})
 
-    def test_forgives_hand_typing(self):
+    def test_forgives_dollar_signs_spaces_and_semicolons(self):
         from scout.fit_shipping import parse_quotes
-        # These get typed off a rate calculator; a parse error is a bad reason to
-        # lose fifteen minutes of work.
         self.assertEqual(
-            parse_quotes(" $30 = $6.10 ; 1,500=$24.30 , "),
+            parse_quotes(" $30 = $6.10 ; 1500=$24.30 , "),
             {30: 6.10, 1500: 24.30},
         )
 
+    def test_refuses_to_guess_at_a_thousands_separator(self):
+        from scout.fit_shipping import parse_quotes
+        # "1,500=24.30" is ambiguous — the comma is also the delimiter. Guessing
+        # would silently misparse a cost and poison every threshold downstream, so
+        # it errors and says what to type.
+        with self.assertRaises(ValueError) as ctx:
+            parse_quotes("1,500=24.30")
+        self.assertIn("1500, not 1,500", str(ctx.exception))
+
     def test_rejects_nonsense_clearly(self):
         from scout.fit_shipping import parse_quotes
-        for bad in ["", "30", "30=0", "30=-4"]:
+        for bad in ["", "30", "30=0", "30=-4", "0=5", "abc=def"]:
             with self.assertRaises(ValueError):
                 parse_quotes(bad)
 

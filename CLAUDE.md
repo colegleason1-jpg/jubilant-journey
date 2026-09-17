@@ -95,6 +95,8 @@ it needs no account and no API — quote the bands on any rate calculator and ru
 `fit_shipping --quotes "30=6.10,300=12.40,…"`. Do this BEFORE shadow mode, or every
 threshold gets calibrated against a cost that is wrong everywhere.
 
-Label automation is separate and is a month-three problem.
+Label automation is **deliberately not being built** — labels are bought by hand on
+Pirate Ship with an existing label printer. `scout/shipping.py` exists and is tested
+for the day volume justifies it, and is not on the critical path.
 
 Then shadow mode — [docs/16](docs/16-shadow-mode-runbook.md).
