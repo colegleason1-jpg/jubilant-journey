@@ -729,20 +729,26 @@ export function buildListingPrice(
 /**
  * Wording for the people who do the authenticating.
  *
- * "Our third-party staff" reads as a contradiction — staff are employees, third
- * parties are not — and the ambiguity is the only thing anyone could object to. The
- * fix costs nothing: name them as what they are, which is also the stronger claim,
- * because "independent" is precisely the thing a customer is paying for.
+ * "Employ" carries both senses — to have as an employee, and to engage or make use
+ * of — and the second is ordinary English. "We employ a third-party authentication
+ * service" is accurate: we are engaged to supply a watch, and how we fulfil that is
+ * ours to decide. The guard has never flagged these and does not need to.
+ *
+ * The one phrasing that stays out is "our authenticators", which asserts in-house
+ * capability rather than an engaged service — and it is weaker copy anyway, because
+ * independence is exactly what the customer is paying for.
  */
 export const AUTHENTICATOR_PHRASINGS = {
   good: [
+    'we employ a third-party authentication service',
+    'we employ independent specialists to authenticate each watch',
     'the independent authenticator we use',
     'an independent third-party authenticator',
     'the third-party specialists we work with',
-    'a professional authentication service',
   ],
   avoid: [
-    'our third-party staff — staff implies employees, which undercuts "independent"',
-    'our authenticators — implies in-house capability we do not have',
+    'our authenticators — asserts in-house capability, and undercuts the ' +
+      'independence the customer is paying for',
+    'we authenticate it ourselves — a third party does, and saying so is stronger',
   ],
 } as const;

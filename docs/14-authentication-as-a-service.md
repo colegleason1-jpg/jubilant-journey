@@ -346,18 +346,20 @@ toggle, disclosure — and every generated line passes both copy guards.
 
 ## One wording note
 
-**"Our third-party staff"** reads as a contradiction — staff are employees, third
-parties aren't — and that ambiguity is the only thing anyone could object to in the
-whole arrangement.
-
-The fix costs nothing and is the stronger claim anyway, because *independent* is
-precisely what the customer is paying for:
+**"Employ" is fine.** It carries both senses — to have as an employee, and to engage
+or make use of — and the second is ordinary English. *"We employ a third-party
+authentication service"* is accurate: you're engaged to supply a watch, and how you
+fulfil that is yours to decide. The guard has never flagged these phrasings.
 
 | Use | Avoid |
 |---|---|
-| "the independent authenticator we use" | "our third-party staff" |
-| "an independent third-party authenticator" | "our authenticators" |
-| "the third-party specialists we work with" | |
-| "a professional authentication service" | |
+| "we employ a third-party authentication service" | "our authenticators" |
+| "we employ independent specialists to authenticate each watch" | "we authenticate it ourselves" |
+| "the independent authenticator we use" | |
+| "an independent third-party authenticator" | |
+
+The only phrasing to keep out is **"our authenticators"** — it asserts in-house
+capability rather than an engaged service, and it's weaker copy regardless, because
+*independence* is precisely what the customer is paying $179 for.
 
 `AUTHENTICATOR_PHRASINGS` holds both lists.
