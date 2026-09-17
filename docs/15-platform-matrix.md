@@ -19,7 +19,6 @@ A platform can be strong on one and useless on the other.
 | **eBay** | ⚠️ Free at **$2,000+**; $80 add-on from $500 | MBG, 30 days, no escrow | ✅ **Official API** | 0.64 |
 | **Chrono24** | ❌ Listing review only, not per-unit. Certified = $249 | ✅ **Free escrow**, 14 days | Dealer feed | 0.54 |
 | **Mercari** | ❌ $5 **photo-based**; watches get **no certificate** | Escrow, 3 days | Manual | 0.46 |
-| **Facebook Marketplace** | ❌ None | ⚠️ Conditional, easily voided | None | 0.31 |
 
 ## What's actually new here
 
@@ -52,17 +51,14 @@ because **we inspect before the seller is paid** rather than filing a claim afte
 
 **Use the escrow window deliberately.** It's the intake SOP's natural home.
 
-### 🔴 Facebook Marketplace is the weakest, and its protection is easy to void
+### 🔴 Facebook Marketplace — dropped
 
-No authentication of any kind. Purchase Protection is free but **only** on shipped
-orders **under $2,000** paid through **Facebook Checkout**. Three ways to lose it:
+No authentication of any kind, and Purchase Protection covered only shipped orders
+**under $2,000** paid through **Facebook Checkout**. Local pickup carried none, paying
+via PayPal/Venmo/Messenger voided it, and $2,000+ was excluded outright — which is
+exactly the shape a watch deal takes, and exactly the band where the money is.
 
-- **Local pickup → zero protection.** None.
-- **Paying via PayPal, Venmo or Messenger → voided.**
-- **$2,000 or above → not covered.**
-
-That's exactly the transaction shape a watch deal tends to take. `assessSourcing()`
-models all three conditions so the engine can't forget them.
+Removed from the platform set. Not worth a sourcing lane.
 
 ## How this changes sourcing
 
@@ -77,7 +73,6 @@ genuinely safer sources and cost nothing extra.
 ```ts
 rankPlatforms(800)[0]   // Bezel, 0.975
 rankPlatforms(2500)     // eBay climbs from 0.64 to 0.80 once AG is free
-assessSourcing('FACEBOOK_MARKETPLACE', 800, { localPickup: true }).protected  // false
 ```
 
 ### Suggested lanes
@@ -88,7 +83,6 @@ assessSourcing('FACEBOOK_MARKETPLACE', 800, { localPickup: true }).protected  //
 | **$500–$2,000** | **Bezel / Poshmark**, eBay as volume | Free authentication where eBay would charge $80 |
 | **$2,000+** | **eBay** | Authentication free, and the API gives us the volume |
 | Any | Chrono24 | When the escrow window matters more than authentication |
-| Any | ❌ Facebook Marketplace | Only shipped, only via Checkout, only under $2,000 — and even then no authentication |
 
 ---
 
@@ -103,4 +97,3 @@ assessSourcing('FACEBOOK_MARKETPLACE', 800, { localPickup: true }).protected  //
 - [Mercari Authenticate — what it is](https://www.mercari.com/us/help_center/article/475/)
 - [Mercari Authenticate fees & certificates](https://www.mercari.com/us/help_center/article/508/)
 - [StockX — how watches are authenticated](https://help.stockx.com/watches/how-is-the-watch-authenticated)
-- [Facebook Purchase Protection](https://www.facebook.com/help/228307904608701)

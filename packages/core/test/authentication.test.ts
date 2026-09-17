@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ACCURATE_RELATIONSHIP_PHRASINGS,
+  AUTHENTICATOR_PHRASINGS,
+  buildListingPrice,
   DEFAULT_UNIT,
   findSourcingDisclosures,
   positioningClaims,
@@ -291,5 +293,48 @@ describe('the sourcing-disclosure guard', () => {
       ).ok,
       true,
     );
+  });
+});
+
+describe('the authentication toggle on a listing', () => {
+  test('below $2,000 the displayed price excludes it', () => {
+    const p = buildListingPrice(1200, 950);
+    assert.equal(p.displayPriceUsd, 1200);
+    assert.equal(p.authenticationIncluded, false);
+    assert.equal(p.authenticationOptional, true);
+    assert.equal(p.totalIfToggledUsd, 1200 + p.authenticationUsd);
+    assert.ok(p.toggleLabel.length > 0);
+  });
+
+  test('below $2,000 it discloses what we did and did not do', () => {
+    const p = buildListingPrice(1200, 950);
+    assert.ok(/established seller with verified transaction history/.test(p.disclosure));
+    assert.ok(/has not been independently\s+authenticated/.test(p.disclosure));
+  });
+
+  test('at $2,000+ it is included, free, and stated affirmatively', () => {
+    const p = buildListingPrice(2600, 2100);
+    assert.equal(p.authenticationIncluded, true);
+    assert.equal(p.authenticationOptional, false);
+    assert.equal(p.authenticationUsd, 0);
+    assert.equal(p.totalIfToggledUsd, 2600);
+    assert.equal(p.toggleLabel, '');
+    assert.ok(/included at no charge/.test(p.disclosure));
+  });
+
+  test('every generated line passes both copy guards', () => {
+    for (const [display, source] of [[1200, 950], [2600, 2100], [700, 520]] as const) {
+      const p = buildListingPrice(display, source);
+      for (const copy of [p.disclosure, p.toggleLabel].filter(Boolean)) {
+        assert.equal(reviewCustomerCopy(copy).ok, true, copy);
+      }
+    }
+  });
+
+  test('the suggested authenticator phrasings pass; the ones to avoid are flagged', () => {
+    for (const good of AUTHENTICATOR_PHRASINGS.good) {
+      assert.deepEqual(findProhibitedClaims(good), [], good);
+    }
+    assert.ok(findProhibitedClaims('Checked by our authenticators').length > 0);
   });
 });

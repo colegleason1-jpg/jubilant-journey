@@ -13,9 +13,14 @@
  * no per-unit physical authentication on most listings but a free escrow that is
  * arguably better recourse than eBay's.
  *
- * The standout, and it is not currently in the sourcing plan: **Bezel** authenticates
- * in-house on every purchase, free, with insured overnight shipping and no buyer's
- * premium. For a watch-specialist marketplace that is a genuinely different offer.
+ * The standout is **Bezel**: in-house authentication on every purchase, free, with
+ * insured overnight shipping and no buyer's premium. For a watch-specialist
+ * marketplace that is a genuinely different offer.
+ *
+ * Facebook Marketplace was removed. It had no authentication of any kind, and its
+ * Purchase Protection covered only shipped orders under $2,000 paid through Facebook
+ * Checkout — excluding local pickup, any payment outside Checkout, and exactly the
+ * price band where the money is. Not worth a sourcing lane.
  */
 
 export type PlatformId =
@@ -24,8 +29,7 @@ export type PlatformId =
   | 'BEZEL'
   | 'POSHMARK'
   | 'MERCARI'
-  | 'STOCKX'
-  | 'FACEBOOK_MARKETPLACE';
+  | 'STOCKX';
 
 export interface AuthenticationPolicy {
   /** Physical third-party inspection before it reaches us. */
@@ -219,33 +223,6 @@ export const PLATFORMS: Readonly<Record<PlatformId, Platform>> = {
     sellerFeePct: 0.125,
   },
 
-  FACEBOOK_MARKETPLACE: {
-    id: 'FACEBOOK_MARKETPLACE',
-    label: 'Facebook Marketplace',
-    livePriceAccess: 'NONE',
-    authentication: {
-      physicalInspection: false,
-      freeAboveUsd: null,
-      optInCostUsd: null,
-      certificateIssued: false,
-      notes: 'None of any kind.',
-    },
-    recourse: {
-      notAsDescribedCovered: true,
-      windowDays: null,
-      escrow: false,
-      voidedBy: [
-        'local pickup — no Purchase Protection at all',
-        'payment outside Facebook Checkout (PayPal, Venmo, Messenger)',
-        'order value of $2,000 or more',
-      ],
-      notes:
-        'Purchase Protection is free but ONLY on shipped orders under $2,000 paid ' +
-        'through Facebook Checkout. Local pickup carries zero protection.',
-    },
-    conditionReliability: 0.25,
-    sellerFeePct: 0,
-  },
 };
 
 export interface SourcingAssessment {
@@ -260,16 +237,10 @@ export interface SourcingAssessment {
   warnings: string[];
 }
 
-/**
- * What this platform gives us on an order of this size.
- *
- * The `conditions` argument matters for Facebook Marketplace specifically, where
- * local pickup or paying outside Checkout silently removes every protection.
- */
+/** What this platform gives us on an order of this size. */
 export function assessSourcing(
   platformId: PlatformId,
   orderValueUsd: number,
-  conditions: { localPickup?: boolean; paidOutsidePlatform?: boolean } = {},
 ): SourcingAssessment {
   const platform = PLATFORMS[platformId];
   const warnings: string[] = [];
@@ -282,21 +253,7 @@ export function assessSourcing(
 
   const authenticationCostUsd = freeAuthentication ? 0 : authentication.optInCostUsd;
 
-  let isProtected = recourse.notAsDescribedCovered;
-  if (platformId === 'FACEBOOK_MARKETPLACE') {
-    if (conditions.localPickup) {
-      isProtected = false;
-      warnings.push('local pickup on Facebook Marketplace carries NO protection at all');
-    }
-    if (conditions.paidOutsidePlatform) {
-      isProtected = false;
-      warnings.push('paying outside Facebook Checkout voids Purchase Protection');
-    }
-    if (orderValueUsd >= 2000) {
-      isProtected = false;
-      warnings.push('Purchase Protection only covers shipped orders under $2,000');
-    }
-  }
+  const isProtected = recourse.notAsDescribedCovered;
 
   if (!authentication.physicalInspection) {
     warnings.push(

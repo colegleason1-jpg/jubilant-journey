@@ -304,3 +304,60 @@ say yes, and it's the difference between images you can defend and images you ca
 Combined with the routing rules in [docs/13](13-fulfilment-routing.md), that gives you
 a coherent lane: **direct-ship new/unworn stock with licensed or permitted imagery**,
 and anything pre-owned comes through you and gets photographed.
+
+
+---
+
+## How it appears on the listing
+
+Two regimes, split where eBay stops charging us.
+
+### Below a $2,000 source price — paid toggle, price stays clean
+
+The displayed price **does not include** authentication, so we stay competitive on the
+number buyers actually compare. A checkout toggle adds it — and because the customer
+elects before we buy, we can elect eBay's $80 add-on at their checkout.
+
+> **$1,200**
+>
+> *Acquired from an established seller with verified transaction history, and
+> inspected by us on arrival. This watch has not been independently authenticated —
+> you can add third-party authentication below.*
+>
+> ☐ **Add third-party authentication — $179.** Inspected by an independent
+> professional authenticator before dispatch, and supplied with their certificate.
+>
+> → $1,379 if toggled
+
+That disclosure does double duty: it's an accurate account of what we did and didn't
+do, and it sells the toggle by naming the exact gap the toggle closes.
+
+### $2,000 and above — included, free, stated affirmatively
+
+eBay's programme is automatic and free to us here, so there's nothing to charge for:
+
+> **$2,600**
+>
+> *Third-party authenticated. This watch is inspected by a professional authenticator
+> before it reaches you, and ships with their certification — included at no charge.*
+
+`buildListingPrice(displayPrice, sourcePrice)` returns the whole thing — price,
+toggle, disclosure — and every generated line passes both copy guards.
+
+## One wording note
+
+**"Our third-party staff"** reads as a contradiction — staff are employees, third
+parties aren't — and that ambiguity is the only thing anyone could object to in the
+whole arrangement.
+
+The fix costs nothing and is the stronger claim anyway, because *independent* is
+precisely what the customer is paying for:
+
+| Use | Avoid |
+|---|---|
+| "the independent authenticator we use" | "our third-party staff" |
+| "an independent third-party authenticator" | "our authenticators" |
+| "the third-party specialists we work with" | |
+| "a professional authentication service" | |
+
+`AUTHENTICATOR_PHRASINGS` holds both lists.

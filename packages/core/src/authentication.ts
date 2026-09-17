@@ -657,3 +657,92 @@ export function reviewCustomerCopy(copy: string): {
     sourcingDisclosures,
   };
 }
+
+// ──────────────────── listing price, with the authentication toggle ─────────────
+
+/**
+ * How authentication appears on a listing.
+ *
+ * Two regimes, split at the point where eBay stops charging us:
+ *
+ *   BELOW $2,000 source — the certificate is a paid option. The displayed price does
+ *   NOT include it, so we stay price-competitive on the number buyers compare. A
+ *   toggle at checkout adds it, and the customer's election reaches us before we buy,
+ *   which is what lets us elect eBay's add-on at their checkout (see above).
+ *
+ *   $2,000 AND ABOVE — eBay's programme is automatic and free to us, so it is
+ *   included, stated affirmatively, and not charged for.
+ */
+export interface ListingPrice {
+  displayPriceUsd: number;
+  authenticationIncluded: boolean;
+  authenticationOptional: boolean;
+  authenticationUsd: number;
+  totalIfToggledUsd: number;
+  /** The provenance line shown on every listing in this regime. */
+  disclosure: string;
+  /** Label for the checkout toggle. Empty when authentication is included. */
+  toggleLabel: string;
+}
+
+export function buildListingPrice(
+  displayPriceUsd: number,
+  sourcePriceUsd: number,
+  config: AuthenticationConfig = DEFAULT_AUTHENTICATION,
+): ListingPrice {
+  const includedFree = sourcePriceUsd >= config.ebayFreeThresholdUsd;
+
+  if (includedFree) {
+    return {
+      displayPriceUsd,
+      authenticationIncluded: true,
+      authenticationOptional: false,
+      authenticationUsd: 0,
+      totalIfToggledUsd: displayPriceUsd,
+      disclosure:
+        'Third-party authenticated. This watch is inspected by a professional ' +
+        'authenticator before it reaches you, and ships with their certification — ' +
+        'included at no charge.',
+      toggleLabel: '',
+    };
+  }
+
+  return {
+    displayPriceUsd,
+    authenticationIncluded: false,
+    authenticationOptional: true,
+    authenticationUsd: config.upsellPriceUsd,
+    totalIfToggledUsd: displayPriceUsd + config.upsellPriceUsd,
+    // Honest about what we did and didn't do. It also sells the toggle, because it
+    // names the gap it closes.
+    disclosure:
+      'Acquired from an established seller with verified transaction history, and ' +
+      'inspected by us on arrival. This watch has not been independently ' +
+      'authenticated — you can add third-party authentication below.',
+    toggleLabel:
+      `Add third-party authentication — $${config.upsellPriceUsd}. Inspected by an ` +
+      'independent professional authenticator before dispatch, and supplied with ' +
+      'their certificate.',
+  };
+}
+
+/**
+ * Wording for the people who do the authenticating.
+ *
+ * "Our third-party staff" reads as a contradiction — staff are employees, third
+ * parties are not — and the ambiguity is the only thing anyone could object to. The
+ * fix costs nothing: name them as what they are, which is also the stronger claim,
+ * because "independent" is precisely the thing a customer is paying for.
+ */
+export const AUTHENTICATOR_PHRASINGS = {
+  good: [
+    'the independent authenticator we use',
+    'an independent third-party authenticator',
+    'the third-party specialists we work with',
+    'a professional authentication service',
+  ],
+  avoid: [
+    'our third-party staff — staff implies employees, which undercuts "independent"',
+    'our authenticators — implies in-house capability we do not have',
+  ],
+} as const;

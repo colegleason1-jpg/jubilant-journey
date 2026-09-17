@@ -33,32 +33,12 @@ describe('free authentication by platform', () => {
     assert.ok(a.warnings.some((w) => /no certificate/.test(w)));
   });
 
-  test('Facebook Marketplace offers none at all', () => {
-    assert.equal(PLATFORMS.FACEBOOK_MARKETPLACE.authentication.physicalInspection, false);
-    assert.equal(assessSourcing('FACEBOOK_MARKETPLACE', 800).freeAuthentication, false);
-  });
-});
-
-describe('Facebook Marketplace protection is conditional and easy to void', () => {
-  test('covers a shipped sub-$2,000 order through Checkout', () => {
-    assert.equal(assessSourcing('FACEBOOK_MARKETPLACE', 800).protected, true);
-  });
-
-  test('local pickup voids it entirely', () => {
-    const a = assessSourcing('FACEBOOK_MARKETPLACE', 800, { localPickup: true });
-    assert.equal(a.protected, false);
-    assert.ok(a.warnings.some((w) => /NO protection at all/.test(w)));
-  });
-
-  test('paying outside Checkout voids it', () => {
-    assert.equal(
-      assessSourcing('FACEBOOK_MARKETPLACE', 800, { paidOutsidePlatform: true }).protected,
-      false,
-    );
-  });
-
-  test('$2,000 and above is not covered', () => {
-    assert.equal(assessSourcing('FACEBOOK_MARKETPLACE', 2500).protected, false);
+  test('Mercari and Chrono24 are the two without physical inspection', () => {
+    const withoutPhysical = Object.values(PLATFORMS)
+      .filter((p) => !p.authentication.physicalInspection)
+      .map((p) => p.id)
+      .sort();
+    assert.deepEqual(withoutPhysical, ['CHRONO24', 'MERCARI']);
   });
 });
 
@@ -82,10 +62,10 @@ describe('ranking', () => {
     }
   });
 
-  test('Facebook Marketplace ranks last at every order size', () => {
-    for (const value of [800, 2500]) {
-      const ranked = rankPlatforms(value);
-      assert.equal(ranked[ranked.length - 1]!.platform.id, 'FACEBOOK_MARKETPLACE');
+  test('every remaining platform offers some recourse — Facebook was dropped', () => {
+    assert.ok(!('FACEBOOK_MARKETPLACE' in PLATFORMS));
+    for (const a of rankPlatforms(800)) {
+      assert.equal(a.protected, true, a.platform.id);
     }
   });
 
