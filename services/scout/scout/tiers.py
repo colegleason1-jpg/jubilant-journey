@@ -1,4 +1,4 @@
-"""Price tiers — the fluid cost and margin model.
+"""Operational profiles -- how an order is HANDLED, by value.
 
 A port of packages/core/src/tiers.ts. See that file for the full reasoning; the short
 version:
@@ -27,14 +27,10 @@ WIRE = "WIRE"
 
 
 @dataclass(frozen=True)
-class PriceTier:
+class OperationalProfile:
     label: str
     min_order_usd: float
     max_order_usd: float
-    outbound_shipping_usd: float
-    packaging_usd: float
-    min_margin_pct: float
-    min_gross_profit_usd: float
     handling_minutes: int
     allowed_rails: tuple[str, ...]
     preferred_rail: str
@@ -45,34 +41,38 @@ class PriceTier:
     notes: str = ""
 
 
-PRICE_TIERS: tuple[PriceTier, ...] = (
-    PriceTier("MICRO", 0, 150, 7.50, 1.50, 0.30, 10, 8, (CARD,), CARD, True,
+OPERATIONAL_PROFILES: tuple[OperationalProfile, ...] = (
+    OperationalProfile("MICRO", 0, 150, 8, (CARD,), CARD, True,
               "Ground Advantage, tracking + $100 insurance included. No authentication "
               "available or needed. 5 photos, no video. Gated on $/hour, not margin."),
-    PriceTier("BUDGET", 150, 400, 11.0, 3.0, 0.22, 35, 15, (CARD,), CARD, True,
+    OperationalProfile("BUDGET", 150, 400, 15, (CARD,), CARD, True,
               "Ground Advantage with added insurance. Signature optional. 10 photos."),
-    PriceTier("ENTRY", 400, 1000, 22.0, 6.0, 0.15, 90, 30, (CARD,), CARD, False,
+    OperationalProfile("ENTRY", 400, 1000, 30, (CARD,), CARD, False,
               "Priority Mail, signature, insured. Authenticity Guarantee add-on once "
               "the SOURCE price clears $500. Full intake SOP starts here."),
-    PriceTier("CORE", 1000, 2500, 40.0, 9.0, 0.12, 120, 35, (CARD, ACH), CARD, False,
+    OperationalProfile("CORE", 1000, 2500, 35, (CARD, ACH), CARD, False,
               "Priority Express, adult signature, insured. The bread-and-butter band."),
-    PriceTier("UPPER", 2500, 7500, 55.0, 12.0, 0.06, 300, 45, (CARD, ACH), ACH, False,
+    OperationalProfile("UPPER", 2500, 7500, 45, (CARD, ACH), ACH, False,
               "Authenticity Guarantee free at $2,000+. Card fees bite hard here — "
               "offer an ACH discount and most buyers take it."),
-    PriceTier("HIGH", 7500, 25000, 110.0, 20.0, 0.01, 100, 60, (ACH, WIRE), WIRE, False,
+    OperationalProfile("HIGH", 7500, 25000, 60, (ACH, WIRE), WIRE, False,
               "Registered Mail or Parcel Pro. CARD NOT PERMITTED: 2.9% uncapped would "
               "exceed the entire gross margin. 1% of $10,000 is $100 and that is real "
               "profit — it works because the rail is cheap and hard to reverse."),
-    PriceTier("ULTRA", 25000, float("inf"), 200.0, 30.0, 0.01, 250, 90, (WIRE,), WIRE, False,
+    OperationalProfile("ULTRA", 25000, float("inf"), 90, (WIRE,), WIRE, False,
               "Wire only, funds cleared before the watch moves. Every unit is bespoke."),
 )
 
 
-def tier_for(order_value_usd: float) -> PriceTier:
-    for t in PRICE_TIERS:
+def operational_profile(order_value_usd: float) -> OperationalProfile:
+    for t in OPERATIONAL_PROFILES:
         if t.min_order_usd <= order_value_usd < t.max_order_usd:
             return t
-    return PRICE_TIERS[0]
+    return OPERATIONAL_PROFILES[0]
+
+
+#: Deprecated alias so call sites migrate incrementally.
+tier_for = operational_profile
 
 
 def processing_fee(order_value_usd: float, rail: str, cfg) -> float:
@@ -87,7 +87,7 @@ def processing_fee(order_value_usd: float, rail: str, cfg) -> float:
 
 def resolve_rail(order_value_usd: float, requested: str | None = None) -> str | None:
     """The rail to actually use. None means the requested rail is banned at this value."""
-    tier = tier_for(order_value_usd)
+    tier = operational_profile(order_value_usd)
     if requested is None:
         return tier.preferred_rail
     return requested if requested in tier.allowed_rails else None

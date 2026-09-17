@@ -34,33 +34,70 @@ def _b(name: str, default: bool) -> bool:
 
 @dataclass(frozen=True)
 class Pricing:
-    """Mirror of DEFAULT_PRICING in packages/core/src/pricing.ts.
+    """Cost curve, payment rails, LTV assumptions and the contribution floor.
 
-    Note what is NOT here: a margin floor. Floors live per-tier in tiers.py, because a
-    single percentage gets both ends of the price range wrong. Overrides below exist
-    for experiments, not for normal operation.
+    Note what is NOT here: a margin percentage floor. The only hard floor is positive
+    contribution after real cash costs; whether a thin deal is worth doing is a
+    capacity question. See economics.py.
     """
 
     sales_tax_rate: float = field(default_factory=lambda: _f("HOME_STATE_SALES_TAX_RATE", 0.075))
     has_resale_certificate: bool = field(default_factory=lambda: _b("HAS_RESALE_CERTIFICATE", True))
-    inbound_shipping_usd: float = 0.0
     card_percent: float = 0.029
     card_fixed_usd: float = 0.30
     radar_per_txn_usd: float = 0.07
     ach_percent: float = 0.008
     ach_cap_usd: float = 5.0
     wire_fee_usd: float = 0.0
-    epn_commission_rate: float = 0.015
     auth_addon_usd: float = 80.0
     target_discount_to_market: float = field(
         default_factory=lambda: _f("TARGET_DISCOUNT_TO_MARKET", 0.10)
     )
-    #: Optional global overrides of the per-tier floors. Leave as None in production.
-    min_margin_pct_override: float | None = field(
-        default_factory=lambda: _fo("MIN_MARGIN_PCT_OVERRIDE")
+
+    # ⚠️ ZERO BY DEFAULT. eBay Partner Network is built for driving EXTERNAL traffic,
+    # and affiliate programmes generally prohibit commission on your own purchases.
+    # Unconfirmed, so it is not in the base case: at the thin contributions we now
+    # target, a phantom 1.5% is what turns a real $1 profit into a real loss.
+    epn_commission_rate: float = field(default_factory=lambda: _f("EPN_COMMISSION_RATE", 0.0))
+
+    # ── shipping cost curve, fitted to published USPS rates ──────────────────────
+    ground_advantage_usd: float = 8.50
+    priority_usd: float = 11.00
+    priority_express_usd: float = 28.00
+    registered_usd: float = 45.00
+    signature_confirmation_usd: float = 4.15
+    adult_signature_usd: float = 10.05
+    included_insurance_usd: float = 100.0
+    insurance_base_usd: float = 2.65
+    insurance_per_100_usd: float = 1.05
+    registered_threshold_usd: float = 5000.0
+    registered_rate_pct: float = 0.005
+
+    # ── what a new customer is worth (sourced; see docs/12) ──────────────────────
+    repeat_rate: float = field(default_factory=lambda: _f("REPEAT_RATE", 0.12))
+    second_order_aov_multiplier: float = 1.4
+    expected_referrals: float = field(default_factory=lambda: _f("EXPECTED_REFERRALS", 0.15))
+    average_future_contribution_usd: float = field(
+        default_factory=lambda: _f("AVG_FUTURE_CONTRIBUTION_USD", 150.0)
     )
-    min_gross_profit_usd_override: float | None = field(
-        default_factory=lambda: _fo("MIN_GROSS_PROFIT_USD_OVERRIDE")
+    review_credit_usd: float = 0.0
+
+    # ── the decision policy ──────────────────────────────────────────────────────
+    #: The only hard floor. Default $1 -- "if I make a damn dollar that's fine".
+    min_contribution_usd: float = field(default_factory=lambda: _f("MIN_CONTRIBUTION_USD", 1.0))
+    #: Enforced ONLY when capacity is CONSTRAINED.
+    min_contribution_per_hour_usd: float = field(
+        default_factory=lambda: _f("MIN_CONTRIBUTION_PER_HOUR_USD", 25.0)
+    )
+    min_return_on_float_pct: float = field(
+        default_factory=lambda: _f("MIN_RETURN_ON_FLOAT_PCT", 0.015)
+    )
+    #: ABUNDANT = spare hours and float, take anything that pays for itself.
+    #: CONSTRAINED = hours or float are binding, so thin deals crowd out better ones.
+    capacity: str = field(default_factory=lambda: os.environ.get("SCOUT_CAPACITY", "ABUNDANT"))
+    #: Keep the floor cash-real by default; do not let LTV credit mask a cash loss.
+    count_strategic_credit_toward_floor: bool = field(
+        default_factory=lambda: _b("COUNT_LTV_TOWARD_FLOOR", False)
     )
 
 

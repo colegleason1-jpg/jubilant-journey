@@ -1,198 +1,175 @@
-# 12 — The Buy Box, The Offer Ladder, and Auto-Listing
+# 12 — What To Pay: Contribution, Not Margin
 
-## The model is fluid, because the economics are
+## The correction
 
-There is no single right buy discount and no single right margin floor. Two things
-move in opposite directions as price rises, and **both** have to be modelled:
+Two earlier versions of this document were wrong in the same way: they gated deals on
+a **margin percentage**. The second version at least made the percentage vary by price
+band, but it was still a number I picked, not a number derived from anything.
 
-| | Cheap watch ($30) | Expensive watch ($10,000) |
+On a **$2,600** watch it demanded you buy at **$1,890** — a 27% discount — and clear
+$280 of gross. Here is what that threw away:
+
+```
+market $2,600  →  list $2,450 (5.8% under market, still a real discount for the buyer)
+               →  buy at $2,300
+                     on card:  +$3.68
+                     on ACH:   +$70.10
+```
+
+Positive money, a **far more findable** deal, and — the part a margin gate cannot see
+at all — **a customer**.
+
+## Why a margin floor is the wrong objective
+
+This is not a portfolio of independent transactions. It is a business trying to build
+an organic customer pipeline, and in that business:
+
+- **Paid acquisition costs $156–782 per customer** at our price points ([docs/07](07-marketing-and-demand.md)).
+- So a sale that contributes **$1** and acquires a customer is not a marginal deal.
+  It is the cheapest customer acquisition available, by two orders of magnitude.
+- Customers leave reviews, refer (**20–30% referral rate in luxury**), and return
+  (**9–20%** in jewellery/watches, **76% of those within 90 days**).
+
+**A $30 watch sold at a dollar of profit is a customer acquisition, a review, a
+forum reputation point, and a person who might buy a $2,000 watch next year.** None of
+that appears in a margin percentage.
+
+### What a new customer is actually worth
+
+Derived, not invented — every input is sourced, and all of it is configurable:
+
+| Input | Value | Source |
 |---|---|---|
-| **Percentage margin needed** | **High** — 30%, because 5% of $30 is $1.50 | **Low** — 1%, because 1% is $100 |
-| **Discount you must buy at** | **Deep** — ~50% of market | **Shallow** — ~90% of market is fine |
-| **Shipping** | $7.50 padded envelope, **charged to the buyer** | $110 Registered Mail, absorbed |
-| **Payment rail** | Card | **Wire or ACH — card is banned** |
-| **Handling** | 8 minutes, 5 photos | 60 minutes, full SOP, a phone call |
-| **What gates it** | $/hour | Absolute dollars vs. risk |
+| Repeat purchase rate (jewellery/watches) | 12% | published range 9–20% |
+| Second-order AOV multiplier | 1.4× | published range 1.3–1.6× |
+| Converted referrals per customer | 0.15 | luxury referral rates run 20–30% |
+| Average future contribution | $150 | our own model |
+| **New-customer credit** | **$47.70** | |
 
-> **An earlier draft of this document was wrong.** It applied one shipping assumption
-> (insured Priority Express, ~$32 floor) and one margin floor (12%) to every price
-> point, and concluded that nothing under ~$800 was tradeable. That conclusion was an
-> artefact of bad constants, not a fact about the business. You can absolutely make
-> money on a $30 watch, and you can absolutely make money on 1% of a $10,000 one.
-
-### What the engine says now
-
-```
-market     tier    rail   list     max buy    buy%    gross    margin   $/hour
-    30     MICRO   CARD      27      13.99     47%    $10.35    30.0%      $78
-   100     MICRO   CARD      90      56.91     57%    $29.25    30.0%     $219
-   350     BUDGET  CARD     315     233.97     67%    $71.72    22.0%     $287
-   900     ENTRY   CARD     810     565.12     63%   $121.50    15.0%     $243
- 2,600     CORE    CARD   2,340   1,890.32     73%   $280.80    12.0%     $481
- 5,000     UPPER   ACH    4,500   4,190.86     84%   $300.00     6.7%     $400
-10,000     HIGH    WIRE   9,000   8,903.55     89%   $100.00     1.1%     $100
-18,000     HIGH    WIRE  16,200  16,150.25     90%   $162.00     1.0%     $162
-```
-
-**The required discount narrows from ~53% to ~10% as you move up the range.** That's
-the whole model in one sentence.
-
-### So "buy at 90% of market" is neither right nor wrong — it depends where you are
-
-| Market price | Buy at 90%? | Buy at 95%? |
-|---:|---|---|
-| $200 | ❌ loses | ❌ loses |
-| $1,000 | ❌ loses | ❌ loses |
-| $2,600 | ❌ loses | ❌ loses |
-| $5,000 | ✅ works (3.75% discount to offer) | ❌ loses |
-| $10,000 | ✅ works (9% discount to offer) | ✅ works (4%) |
-| $18,000 | ✅ works (9.5%) | ✅ works (4.75%) |
+**Cross-check:** the published CAC benchmark for >$200-AOV ecommerce is ~$48. Our
+independently-derived figure lands within a dollar of it. Acquiring a customer is
+worth roughly what acquiring one costs — which is exactly the point.
 
 ---
 
-## ⚡ The payment rail is what makes the top end possible
-
-This is the single most important mechanical fact above ~$2,500.
-
-**Card processing is 2.9% + $0.30 and uncapped.** On a $10,000 order that is
-**$290.37** — nearly three times a 1% gross margin. On a card, a 1% deal at $10,000
-is not thin, it is a **$190 loss**.
-
-**Stripe ACH Direct Debit is 0.8%, capped at $5.** The cap binds above $625. Same
-$10,000 order: **$5.00**.
+## The rule
 
 ```
-$10,000 order, bought at $8,903.55:
-  on CARD  →  −$190.37   ❌
-  on WIRE  →  +$100.00   ✅
+HARD FLOOR (always):     contribution > $1 after every real cash cost
+                         ↑ literally "if I make a damn dollar that's fine"
+
+THEN:                    is capacity abundant or constrained?
+
+  ABUNDANT   spare hours, spare float  →  take it. A $1 hour beats an idle hour.
+  CONSTRAINED  hours/float are binding →  now rank, because a thin deal occupies
+                                          an hour a fatter deal wanted.
 ```
 
-Same watch, same purchase price, same day. **The rail is the deal.**
+**Margin percentage appears nowhere.** What's scarce is your time (~14 hrs/month) and
+your float ($4–5k) — so deals are ranked on **adjusted contribution per hour** and
+rejected only when something better competes for the same hour or the same dollar.
 
-So the `HIGH` and `ULTRA` tiers don't merely prefer ACH/wire — they **refuse cards**
-(`resolveRail(10000, 'CARD')` returns `null`). Two reasons, both good:
+### What this does to the bid ceiling
 
-1. The fee would exceed the entire gross margin.
-2. Wire is effectively irreversible and ACH disputes are far weaker than card
-   chargebacks. A 1% margin can only survive if a single reversal isn't going to eat
-   a hundred units of profit.
+| market | list | max buy | **buy %** | old margin gate allowed |
+|---:|---:|---:|---:|---:|
+| $30 | $27 | $23.10 | **77%** | (called it impossible) |
+| $100 | $90 | $84.27 | **84%** | (called it impossible) |
+| $900 | $810 | $674.94 | **75%** | 63% |
+| $1,150 | $1,035 | $863.42 | **75%** | 66% |
+| $2,600 | $2,340 | $2,196.92 | **84%** | 73% |
+| $10,000 | $9,000 | $8,880.95 | **89%** | 89% |
+| $18,000 | $16,200 | $16,044.95 | **89%** | 90% |
 
-**Practical move:** offer a 1–2% "bank transfer discount" on orders over $2,500. Most
-buyers of a $5,000 watch will happily wire to save $75, and it costs you a fraction of
-what the card would.
+The required discount is now **11–25% across the whole range**, not 27–53%. That is
+several times the deal flow, at every price point.
+
+> **The $900–$1,150 rows are the tightest (75%)** because the **$80 Authenticity
+> Guarantee add-on** is ~9% of the order there. It's free above $2,000 and unavailable
+> below $500, so the middle carries it. Real constraint, not a policy choice.
 
 ---
 
-## ⚠️ One real dead zone: just above a $500 source price
+## ⚡ The payment rail is most of the deal above $2,500
 
-Not a modelling artefact — a genuine kink worth knowing. A watch sourced at **$520**
-picks up the **$80 Authenticity Guarantee add-on**; one sourced at **$480** doesn't.
-That $80 has to come out of a still-modest margin, so the required discount actually
-*deepens* right there:
+**Card is 2.9% + $0.30, uncapped.** On a $10,000 order that is **$290.37**.
+**Stripe ACH is 0.8%, capped at $5** (the cap binds above $625). Same order: **$5.00**.
 
 ```
-list $180  (source ~$131, no add-on)   → buy at 73% of list
-list $810  (source ~$565, pays $80)    → buy at 70% of list   ← tighter, not looser
+$2,600 watch bought at $2,300:   on CARD  +$3.68     on ACH  +$70.10   (19×)
+$10,000 bought at $8,903.55:     on CARD  −$190.37   on WIRE +$100.00
 ```
 
-Above ~$2,000 source price, authentication goes free again and the curve resumes
-narrowing. **Be deliberate about which side of $500 you buy on.** There's a test
-documenting this (`the $500 authentication threshold creates a real dead zone`).
+Same watch, same day. So the `HIGH` and `ULTRA` profiles **refuse cards outright** —
+`resolveRail(10000, 'CARD')` returns `null`. Not a margin policy; arithmetic about a
+fee schedule. Wire is also near-irreversible, which is the other reason a 1% margin
+survives up there.
+
+**Practical move:** offer a 1–2% bank-transfer discount above $2,500. A $5,000 buyer
+will happily wire to save $75, and it costs you a fraction of the card fee.
 
 ---
 
-## The two floors
+## ⚠️ A revenue line I removed
 
-Every deal must clear **both**, and each catches what the other misses:
+Every earlier version credited **eBay Partner Network commission (1.5%) on our own
+purchases**. I could not confirm that self-referral is permitted — EPN is built for
+driving *external* traffic, and affiliate programmes generally prohibit earning on
+your own orders.
 
-| Floor | Catches |
-|---|---|
-| **Percentage** (`minMarginPct`) | Expensive deals that look fine in dollars but are too thin to absorb a return or a price move |
-| **Absolute dollars** (`minGrossProfitUsd`) | Cheap deals with a flattering ratio that aren't worth the handling. *33% of a $20 order is $9 — a great ratio, a bad use of 15 minutes* |
+**It is now zero by default.** This matters more than it sounds: on the $2,600 example
+it was $34.50 of a $38 contribution. It was carrying the deal.
 
-`effectiveHourlyUsd` is reported on every projection for exactly this reason. A
-$10.35 gross on 8 minutes of handling is **$78/hour**. That's the honest test at the
-cheap end, and a percentage can't express it.
+Verify with EPN directly. If they confirm it, set `epnCommissionRate` and enjoy the
+upside — but do not build a thin-margin business on unconfirmed revenue.
+
+---
+
+## The cost curve
+
+Shipping is modelled as a **curve over declared value** built from the real published
+components, not hand-picked buckets:
+
+```
+postage       Ground Advantage $8.50 → Priority $11 → Express $28 → Registered $45
+signature     none → confirmation $4.15 → adult $10.05
+insurance     first $100 included, then $2.65 + $1.05 per additional $100
+```
+
+A $30 watch ships for **$8.50** and the buyer pays the postage. A $10,000 watch ships
+Registered for ~$105 and we absorb it. Previous versions charged $32 insured Express
+to *everything*, which is what invented the fake floor.
+
+> **Re-fit these constants to your own commercial rates.** This cost sits on every
+> single unit — it is the easiest way to widen every deal in the book.
+
+## The two capacity knobs
+
+| Setting | When | Effect |
+|---|---|---|
+| `capacity: 'ABUNDANT'` | Starting out; spare evenings; float idle | Takes anything ≥ $1 |
+| `capacity: 'CONSTRAINED'` | Time or float is the bottleneck | Also enforces $/hr and return-on-float |
+| `countStrategicCreditTowardFloor: false` *(default)* | | Floor stays cash-real; LTV credit ranks but never masks a cash loss |
+| `...: true` | Deliberate land-grab phase | A small cash loss is acceptable to buy a customer |
 
 ---
 
 ## The offer ladder
 
-For listings with Best Offer enabled: **10% below ask → 5% below → pay the ask.**
+**10% below ask → 5% below → pay the ask.** eBay caps buyer offers per listing
+(commonly 3; rejected, retracted and expired all count), so that's exactly the budget.
+Do not add rungs.
 
-eBay caps buyer offers per listing (commonly 3; rejected, retracted and expired
-offers all count against it), so this ladder is exactly the budget. **Do not add
-rungs.**
+Each rung reports **absolute contribution and contribution per hour** — the percentage
+stops being useful at either end of the range. The ladder truncates at the floor: a
+system that quietly pays the ask after two declines is the expensive bug here.
 
-```
-Ask $790, our list price $1,035 (CORE tier, 12% / $120 floors):
-  Step 1   offer $711.00  (−10%)  →  $199.30 gross, 19.3%   ✅ send
-  Step 2   offer $750.50  (−5%)   →  $160.40 gross, 15.5%   ✅ send if declined
-  Step 3   pay   $790.00  (ask)   →  $121.50 gross, 11.7%   ❌ below floor — WALK AWAY
-```
+**⚠️ You send offers by hand.** eBay prohibits automated order placement and an offer
+is an order commitment.
 
-The ladder **truncates at the floors**. An automated system that quietly pays the ask
-because the first two offers were declined is the expensive bug here, so
-`viableRungs()` returns only the rungs worth sending and walking away is an expected
-outcome.
-
-Each rung reports **absolute gross as well as percentage**, because at high value the
-percentage stops being the useful number.
-
-### Two hard constraints
-
-**⚠️ You send offers by hand.** eBay's User Agreement prohibits automated order
-placement and an offer is an order commitment. The engine decides the numbers and
-emails them to you; the clicking is yours.
-
-**⚠️ The ladder is for stocked buying only.** A seller has up to 48 hours to answer.
-Two rungs can burn four days, which does not fit inside a 7-day card authorization
-with shipping still to come.
-
-### So there are two buying modes
-
-| | **Mode A — Stocked** | **Mode B — Sourced to order** |
-|---|---|---|
-| Trigger | Scout finds a deal | Customer orders |
-| Offers | ✅ Full 10→5→ask ladder | ❌ Buy at ask immediately |
-| Margin | Higher | Lower |
-| Capital | Tied up until it sells | None |
-| Risk | **Dead inventory** ([docs/10](10-risk-register.md) #4) | Source disappears (costs $0) |
-
-**Run Mode B first.** Add Mode A once you have 20 clean orders and know your
-days-to-sell. Both share every gate and pricing function; only the offer step differs.
-
----
-
-## Auto-listing: what the machine may and may not do
-
-```
-  scout finds deal ──► you buy (90 seconds, by hand)
-                              │
-       watch arrives ──► ✅ AUTOMATED: draft listing
-                          title · specs · price from the comp engine ·
-                          condition template · SEO metadata
-                              │
-                     🔴 HUMAN GATE — you, 5 minutes
-                          photos attached · serial logged ·
-                          condition text checked against the actual watch
-                              │
-                       ✅ AUTOMATED: publish, feeds, indexing
-                       ✅ AUTOMATED: delist instantly when the source ends
-```
-
-The `publishable_inventory` view enforces this in the database: a listing renders only
-when it is photographed, serial-logged and human-reviewed. **The scout can stage a
-listing; it cannot publish one.**
-
-Listing copy is a legal description of goods. Machine-written text saying "excellent"
-about a scratched bezel is an "item not as described" chargeback you will lose, and
-3D Secure doesn't cover those. Five minutes per watch is the cheapest insurance here.
-
-**For MICRO/BUDGET tiers the gate can be lighter** — 5 photos, no video, a
-30-second check. Scale the ceremony to the value; that's the point of tiers.
-
-**Delisting is fully automated, no gate.** Removing a listing can't hurt a customer.
+**⚠️ Stocked buying only.** A seller has 48 hours to answer; two rungs can burn four
+days, which doesn't fit inside a 7-day card authorization with shipping still to come.
+For an order already placed on our site, buy at the ask immediately.
 
 ---
 
@@ -200,29 +177,30 @@ about a scratched bezel is an "item not as described" chargeback you will lose, 
 
 | Question | Function | File |
 |---|---|---|
-| Which tier, what costs? | `tierFor()` | `packages/core/src/tiers.ts` |
+| What does shipping actually cost? | `shippingCostUsd()` | `economics.ts` |
 | What does the rail cost? | `processingFeeUsd()` | `tiers.ts` |
-| Is this rail even allowed? | `resolveRail()` | `tiers.ts` |
-| What's it worth? | `computeComps()` | `comps.ts` |
-| Will it sell regularly? | `computeLiquidity()` | `comps.ts` |
-| What do we list at? | `solveListPrice()` | `pricing.ts` |
-| **Most we can pay?** | `maxViableSourcePrice()` | `pricing.ts` |
-| Does it clear both floors? | `meetsFloors()` | `pricing.ts` |
-| **Can I trade at this price point?** | `tradeability()` | `offers.ts` |
-| What discount can I offer? | `maxCustomerDiscount()` | `offers.ts` |
+| Is this rail allowed at this value? | `resolveRail()` | `tiers.ts` |
+| What is a new customer worth? | `newCustomerCreditUsd()` | `economics.ts` |
+| **Does this deal pay for itself?** | `computeEconomics()` → `judgeDeal()` | `economics.ts` |
+| **Most we can pay?** | `maxSourcePrice()` | `economics.ts` |
+| Can I trade at this price point? | `tradeability()` | `offers.ts` |
 | What do we offer the seller? | `buildOfferLadder()` | `offers.ts` |
 | Should it reach me? | `evaluateDeal()` | `deal.ts` |
 | Same, in the scanner | `deal.evaluate()` | `services/scout/scout/deal.py` |
 
-Every threshold in `tiers.ts` is a **starting guess**. Re-fit them from your own
-closed sales — that's what the comp snapshots and the rejection log are for.
+129 TypeScript tests and 27 Python tests, with the Python suite asserting the same
+worked examples so the two cannot drift.
 
 ---
 
 ### Sources
+- [Repeat purchase rate benchmarks 2026](https://prooflytics.io/blog/repeat-purchase-rate-benchmarks)
+- [Average repeat purchase rate by vertical](https://eightx.co/blog/average-repeat-purchase-rate-by-vertical)
+- [Jewelry ecommerce benchmarks 2026](https://www.immerss.live/content/jewelry-ecommerce-benchmarks-2026/)
+- [CLV benchmarks 2026](https://www.digitalapplied.com/blog/customer-lifetime-value-benchmarks-2026-industry-data)
+- [CAC benchmarks by industry 2026](https://www.digitalapplied.com/blog/customer-acquisition-cost-benchmarks-2026-industry)
+- [LTV:CAC ratio for ecommerce](https://fractosolutions.com/blog/what-is-a-good-ltvcac-ratio-for-ecommerce/)
 - [Stripe ACH fees: 0.8% capped at $5](https://feeprobe.com/stripe-ach-fees/)
-- [Stripe pricing breakdown 2026](https://flexprice.io/blog/stripe-pricing-breakdown-2026)
 - [USPS Ground Advantage — tracking + $100 insurance included](https://www.usps.com/ship/ground-advantage.htm)
-- [USPS Ground Advantage pricing 2026](https://www.clickpost.ai/blog/usps-ground-advantage)
 - [eBay Best Offer — buyer offer limits](https://www.ebay.com/help/selling/listings/selling-buy-now/adding-best-offer-listing?id=4144)
-- [eBay Authenticity Guarantee for watches](https://pages.ebay.com/authenticity-guarantee-watches-seller/)
+- [eBay Partner Network — programme rules](https://partnernetwork.ebay.com/solutions/step-5-knowing-the-rules)

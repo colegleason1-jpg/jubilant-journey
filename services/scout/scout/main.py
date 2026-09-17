@@ -109,11 +109,13 @@ def run() -> int:
     best: dict[str, tuple[str, deal.Evaluation]] = {}
     for model_id, ev in evaluations:
         key = ev.listing.ebay_item_id
-        if key not in best or ev.projection.gross_profit_usd > best[key][1].projection.gross_profit_usd:
+        if key not in best or ev.rank_score > best[key][1].rank_score:
             best[key] = (model_id, ev)
 
     passed = [(m, e) for m, e in best.values() if e.passed]
-    passed.sort(key=lambda t: t[1].projection.gross_profit_usd, reverse=True)
+    # Rank on adjusted contribution per hour: what an hour of your life is worth
+    # here, counting the customer acquired, not just the watch flipped.
+    passed.sort(key=lambda t: t[1].rank_score, reverse=True)
 
     # Only alert on genuinely new finds. Resend's free tier caps at 100 emails/day and
     # an alert you have already seen is how people learn to ignore alerts.
@@ -130,8 +132,8 @@ def run() -> int:
             print(
                 f"  [{model_id}] {ev.listing.title[:64]!r} "
                 f"landed ${ev.listing.landed_source_usd:.2f} / market ${ev.market_usd:.2f} "
-                f"-> list ${ev.list_usd:.2f}, margin {ev.projection.margin_pct * 100:.1f}%, "
-                f"gross ${ev.projection.gross_profit_usd:.2f}"
+                f"-> list ${ev.list_usd:.2f}, contribution ${ev.econ.contribution_usd:.2f} "
+                f"(${ev.econ.contribution_per_hour_usd:.0f}/hr, {ev.econ.rail})"
             )
         return 0
 

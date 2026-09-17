@@ -33,16 +33,14 @@ Ranked by *exploitability for a solo operator*, not by glamour:
 | High-lux $6,000+ | Rolex, AP, Patek | 2–5% | **Not year one** — but not never. 2% of $15,000 is $300, which is a fine trade *if* you settle by wire (card fees alone would be $435) and have the float. Revisit once you've done 50 clean orders |
 | Micro / fashion <$500 | Seiko 5, Casio, Orient, Timex | 25–35% | **Viable, and a good testbed.** A $30 watch bought at $14 nets ~$10 in 8 minutes (~$78/hour) with postage charged to the buyer. No authentication, but a dispute costs $30. Good for learning the pipeline with near-zero risk |
 
-> **There is no hard floor — the economics are fluid** (see
-> [docs/12](12-buy-box-and-offers.md)). Money can be made at $30 and at $18,000; what
-> changes is how far below market you must buy (~50% down low, ~90% up high), what
-> margin percentage is worth taking, and which payment rail is viable. An earlier
-> draft claimed a "$800 floor"; that was an artefact of applying one shipping cost
-> and one margin floor to every price point, not a fact about the market.
+> **There is no floor, and margin percentage is not the gate.** The rule is: does the
+> deal cover its own cash costs and leave something? A $30 watch at a dollar of profit
+> is a customer acquisition — and paid acquisition costs $156–782 at our price points.
+> Earlier drafts of this doc claimed a "$600" then a "$800" floor; both were artefacts
+> of a margin model I have since removed. See [docs/12](12-buy-box-and-offers.md).
 >
-> **$800–$2,500 is the recommended STARTING band** — not because other bands don't
-> work, but because it's where deal flow, absolute margin and survivable risk overlap
-> best for a solo operator with limited float. Expand outward once the process works.
+> **$800–$2,500 is a good place to START** — best overlap of deal flow, absolute
+> dollars and survivable risk for a solo operator with limited float. Not a boundary.
 
 ### Why $800–$2,500 is the right place to start
 

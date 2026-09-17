@@ -12,16 +12,16 @@
 import { computeComps, computeLiquidity } from './comps.ts';
 import {
   authTierForPrice,
+  computeEconomics,
   discountToMarket,
-  DEFAULT_PRICING,
-  maxViableSourcePrice,
-  meetsFloors,
-  minMarginPctFor,
-  projectMargin,
+  judgeDeal,
+  maxSourcePrice,
   solveListPrice,
-  type PricingConfig,
-} from './pricing.ts';
-import { tierFor } from './tiers.ts';
+  DEFAULT_POLICY,
+  type DealEconomics,
+  type DealPolicy,
+  type EconomicsInput,
+} from './economics.ts';
 import type {
   Candidate,
   DealEvaluation,
@@ -45,7 +45,11 @@ export interface DealConfig {
   allowedCountries: readonly string[];
   /** Matched as whole words, case-insensitive. The cheapest fraud filter there is. */
   titleBlocklist: readonly string[];
-  pricing: PricingConfig;
+  /** How far under market we advertise. */
+  targetDiscountToMarket: number;
+  /** The contribution floor and capacity state. See economics.ts. */
+  policy: DealPolicy;
+  economics: Omit<EconomicsInput, 'sourcePriceUsd' | 'listPriceUsd'>;
 }
 
 export const DEFAULT_DEAL_CONFIG: DealConfig = {
@@ -77,7 +81,9 @@ export const DEFAULT_DEAL_CONFIG: DealConfig = {
     'read description',
     'no reserve',
   ],
-  pricing: DEFAULT_PRICING,
+  targetDiscountToMarket: 0.1,
+  policy: DEFAULT_POLICY,
+  economics: {},
 };
 
 export function matchesBlocklist(
@@ -109,8 +115,14 @@ export function evaluateDeal(
   });
   const liquidity = computeLiquidity(observedSales, { now });
 
-  const listPriceUsd = solveListPrice(comps.marketPriceUsd, config.pricing);
-  const projection = projectMargin(candidate.priceUsd, listPriceUsd, config.pricing);
+  const listPriceUsd = solveListPrice(comps.marketPriceUsd, config.targetDiscountToMarket);
+  const economicsInput = config.economics;
+  const economics = computeEconomics({
+    ...economicsInput,
+    sourcePriceUsd: candidate.priceUsd,
+    listPriceUsd,
+  });
+  const verdict = judgeDeal(economics, config.policy);
   const discountPct = discountToMarket(candidate.priceUsd, comps.marketPriceUsd);
 
   // ── Gate: price band ──────────────────────────────────────────────────────────
@@ -143,13 +155,12 @@ export function evaluateDeal(
   }
 
   // ── Gate: does the money actually work? ───────────────────────────────────────
-  // Both floors for the tier: the percentage (protects cheap units from not being
-  // worth the handling) and the absolute dollars (protects expensive ones from a
-  // flattering-looking percentage). See tiers.ts.
-  const floors = meetsFloors(projection, config.pricing);
-  if (!floors.ok) {
+  // NOT a margin percentage. The floor is positive contribution after real cash
+  // costs; anything above that is a capacity question, not a margin one. A $1
+  // contribution plus a new customer beats an idle hour. See economics.ts.
+  if (!verdict.accept) {
     gatesFailed.push('MARGIN');
-    warnings.push(`margin floors failed: ${floors.failures.join(', ')}`);
+    warnings.push(...verdict.reasons);
   }
 
   // ── Gate: seller quality ──────────────────────────────────────────────────────
@@ -189,6 +200,12 @@ export function evaluateDeal(
   }
 
   // ── Non-blocking warnings for the human reviewer ──────────────────────────────
+  if (economics.contributionUsd > 0 && economics.contributionPerHourUsd < 25) {
+    warnings.push(
+      `only $${economics.contributionPerHourUsd.toFixed(0)}/hr — fine when you have ` +
+        `spare capacity, skip it when you don't`,
+    );
+  }
   if (comps.spreadPct > 0.3) {
     warnings.push('wide price dispersion — market disagrees on this reference');
   }
@@ -207,70 +224,55 @@ export function evaluateDeal(
   return {
     candidateId: candidate.id,
     pass,
-    score: pass
-      ? scoreDeal(
-          projection.marginPct,
-          minMarginPctFor(tierFor(listPriceUsd), config.pricing),
-          discountPct,
-          liquidity.score,
-          comps.confidence,
-          s,
-        )
-      : 0,
+    score: pass ? scoreDeal(verdict.rankScore, liquidity.score, comps.confidence, s) : 0,
     gatesFailed,
     warnings,
     comps,
     liquidity,
-    projection,
+    economics,
+    maxSourceUsd: maxSourcePrice(listPriceUsd, economicsInput, config.policy),
     discountToMarketPct: discountPct,
   };
 }
 
 /**
- * 0..100, for ranking the daily digest. Margin and liquidity dominate deliberately:
- * a fat margin on something that won't sell is a capital trap, and a fast seller with
- * no margin is unpaid work.
+ * 0..100, for ranking the daily digest.
+ *
+ * Ranks on ADJUSTED CONTRIBUTION PER HOUR — what an hour of your life is worth on
+ * this deal, counting the customer it acquires, not just the watch it flips. A cheap
+ * fast watch can and should outrank an expensive slow one.
  */
 function scoreDeal(
-  marginPct: number,
-  tierMinMarginPct: number,
-  discountPct: number,
+  rankScoreUsdPerHour: number,
   liquidityScore: number,
   compConfidence: number,
   seller: Candidate['seller'],
 ): number {
-  // Score margin RELATIVE to the tier's floor. A 2% margin is excellent on a
-  // $15,000 watch and worthless on a $200 one; an absolute scale would rank every
-  // high-value deal last.
-  const marginScore = clamp01(marginPct / Math.max(tierMinMarginPct * 2.5, 0.02));
-  const discountScore = clamp01(discountPct / 0.4);
+  // $200/hr saturates the scale. Above that, sort by liquidity and confidence.
+  const valueScore = clamp01(rankScoreUsdPerHour / 200);
   const sellerScore = clamp01(
     0.5 * clamp01(seller.feedbackScore / 500) +
       0.5 * clamp01((seller.positiveFeedbackPercent - 98) / 2),
   );
 
   const blended =
-    0.35 * marginScore +
-    0.25 * liquidityScore +
-    0.2 * discountScore +
-    0.12 * compConfidence +
-    0.08 * sellerScore;
+    0.5 * valueScore + 0.25 * liquidityScore + 0.15 * compConfidence + 0.1 * sellerScore;
 
   return Math.round(blended * 100);
 }
 
 /**
- * What the daily digest actually shows you: the bid ceiling. "Market says $1,150,
- * we list at $1,035, do not pay more than $787 for it."
+ * What the daily digest shows you: the bid ceiling. "Market says $2,600, we list at
+ * $2,470, do not pay more than $2,322 for it."
  */
 export function bidCeiling(
   marketPriceUsd: number,
   config: DealConfig = DEFAULT_DEAL_CONFIG,
 ): { listPriceUsd: number; maxSourcePriceUsd: number } {
-  const listPriceUsd = solveListPrice(marketPriceUsd, config.pricing);
+  const listPriceUsd = solveListPrice(marketPriceUsd, config.targetDiscountToMarket);
   return {
     listPriceUsd,
-    maxSourcePriceUsd: maxViableSourcePrice(listPriceUsd, config.pricing),
+    maxSourcePriceUsd: maxSourcePrice(listPriceUsd, config.economics, config.policy),
   };
 }
 

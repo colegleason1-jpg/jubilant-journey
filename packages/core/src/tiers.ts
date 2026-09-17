@@ -1,52 +1,38 @@
 /**
- * Price tiers — the "fluid" cost and margin model.
+ * Operational profiles — how an order is HANDLED, by value.
  *
- * ── Why this file exists ────────────────────────────────────────────────────────
- * An earlier version of this engine used ONE shipping assumption (insured Priority
- * Express, ~$32 floor) and ONE margin floor (12%) at every price point. Both were
- * wrong, and together they produced a fake conclusion: that nothing under ~$800 was
- * tradeable.
+ * ── What this file no longer does ───────────────────────────────────────────────
+ * It used to declare a margin floor per band (30% down low, 12% in the middle, 1% up
+ * high). That was an assumption imposed by hand, not derived from anything, and it
+ * rejected genuinely profitable deals: on a $2,600 watch it demanded a 27% discount
+ * and $280 of gross, throwing away a real +$46 trade and the customer attached to it.
  *
- * Reality is fluid in two directions at once:
+ * Margin floors are gone. Costs are now a CURVE over value (economics.ts), the only
+ * hard floor is positive contribution, and whether a thin deal is worth doing is a
+ * capacity question. What remains here is genuinely operational and genuinely
+ * stepped, because carriers, packaging and payment rails really do come in discrete
+ * products:
  *
- *   • COSTS scale with value. A $30 watch ships in a padded envelope for $7.50, not
- *     insured Express for $40. Applying luxury logistics to a cheap watch invents a
- *     loss that does not exist.
+ *   • which shipping service and how much ceremony (photos, video, signature)
+ *   • how long a unit realistically takes to handle
+ *   • whether postage is charged to the buyer or absorbed
+ *   • which payment rails are permitted
  *
- *   • REQUIRED MARGIN % FALLS as value rises, because what actually has to be
- *     covered is an absolute number — your handling time and your risk — not a
- *     percentage. 35% of a $40 watch is $14. 1% of a $10,000 watch is $100. The
- *     second is the better trade, and the percentage says the opposite.
- *
- * So each tier carries its own shipping, packaging, margin floor, MINIMUM ABSOLUTE
- * GROSS, handling time and permitted payment rails. A deal must clear both the
- * percentage and the dollar floor for its tier.
- *
- * ── The rail is what makes the top end work ─────────────────────────────────────
- * Card processing is 2.9% + $0.30 — uncapped. On a $10,000 order that is $290.30,
- * which is three times a 1% gross margin. Stripe ACH Direct Debit is 0.8% CAPPED AT
- * $5 (the cap binds above $625). Same order: $5.
- *
- * Thin high-value margins are not merely allowed by the rail, they are CREATED by
- * it. That is why the top tiers require ACH or wire rather than merely preferring
- * it. It also cuts chargeback exposure, which is the other reason 1% is survivable
- * up there. See docs/12.
+ * ── The rail is the one that still hard-gates ───────────────────────────────────
+ * Card is 2.9% + $0.30 and uncapped: $290 on a $10,000 order. Stripe ACH is 0.8%
+ * capped at $5. Above roughly $7,500 a card fee can exceed the entire contribution,
+ * so high-value profiles refuse cards outright. That is not a margin policy, it is
+ * arithmetic about a fee schedule.
  */
 
 export type PaymentRail = 'CARD' | 'ACH' | 'WIRE';
 
-export interface PriceTier {
+export interface OperationalProfile {
   label: string;
   /** Inclusive lower bound on ORDER VALUE (what the customer pays). */
   minOrderUsd: number;
   /** Exclusive upper bound. */
   maxOrderUsd: number;
-  outboundShippingUsd: number;
-  packagingUsd: number;
-  /** Percentage floor. Falls as value rises. */
-  minMarginPct: number;
-  /** Absolute floor. This is what really gates the cheap end. */
-  minGrossProfitUsd: number;
   /** Realistic intake + photography + packing time. Drives $/hour. */
   handlingMinutes: number;
   /**
@@ -67,15 +53,11 @@ export interface PriceTier {
  * Defaults. Every number here is a starting guess to be re-fitted from your own
  * closed sales — that is what `comp_snapshots` and the rejection log are for.
  */
-export const PRICE_TIERS: readonly PriceTier[] = [
+export const OPERATIONAL_PROFILES: readonly OperationalProfile[] = [
   {
     label: 'MICRO',
     minOrderUsd: 0,
     maxOrderUsd: 150,
-    outboundShippingUsd: 7.5,
-    packagingUsd: 1.5,
-    minMarginPct: 0.3,
-    minGrossProfitUsd: 10,
     handlingMinutes: 8,
     shippingChargedToCustomer: true,
     allowedRails: ['CARD'],
@@ -89,10 +71,6 @@ export const PRICE_TIERS: readonly PriceTier[] = [
     label: 'BUDGET',
     minOrderUsd: 150,
     maxOrderUsd: 400,
-    outboundShippingUsd: 11,
-    packagingUsd: 3,
-    minMarginPct: 0.22,
-    minGrossProfitUsd: 35,
     handlingMinutes: 15,
     shippingChargedToCustomer: true,
     allowedRails: ['CARD'],
@@ -103,10 +81,6 @@ export const PRICE_TIERS: readonly PriceTier[] = [
     label: 'ENTRY',
     minOrderUsd: 400,
     maxOrderUsd: 1000,
-    outboundShippingUsd: 22,
-    packagingUsd: 6,
-    minMarginPct: 0.15,
-    minGrossProfitUsd: 90,
     handlingMinutes: 30,
     shippingChargedToCustomer: false,
     allowedRails: ['CARD'],
@@ -119,10 +93,6 @@ export const PRICE_TIERS: readonly PriceTier[] = [
     label: 'CORE',
     minOrderUsd: 1000,
     maxOrderUsd: 2500,
-    outboundShippingUsd: 40,
-    packagingUsd: 9,
-    minMarginPct: 0.12,
-    minGrossProfitUsd: 120,
     handlingMinutes: 35,
     shippingChargedToCustomer: false,
     allowedRails: ['CARD', 'ACH'],
@@ -135,10 +105,6 @@ export const PRICE_TIERS: readonly PriceTier[] = [
     label: 'UPPER',
     minOrderUsd: 2500,
     maxOrderUsd: 7500,
-    outboundShippingUsd: 55,
-    packagingUsd: 12,
-    minMarginPct: 0.06,
-    minGrossProfitUsd: 300,
     handlingMinutes: 45,
     shippingChargedToCustomer: false,
     allowedRails: ['CARD', 'ACH'],
@@ -151,10 +117,6 @@ export const PRICE_TIERS: readonly PriceTier[] = [
     label: 'HIGH',
     minOrderUsd: 7500,
     maxOrderUsd: 25000,
-    outboundShippingUsd: 110,
-    packagingUsd: 20,
-    minMarginPct: 0.01,
-    minGrossProfitUsd: 100,
     handlingMinutes: 60,
     shippingChargedToCustomer: false,
     allowedRails: ['ACH', 'WIRE'],
@@ -168,10 +130,6 @@ export const PRICE_TIERS: readonly PriceTier[] = [
     label: 'ULTRA',
     minOrderUsd: 25000,
     maxOrderUsd: Number.POSITIVE_INFINITY,
-    outboundShippingUsd: 200,
-    packagingUsd: 30,
-    minMarginPct: 0.01,
-    minGrossProfitUsd: 250,
     handlingMinutes: 90,
     shippingChargedToCustomer: false,
     allowedRails: ['WIRE'],
@@ -182,13 +140,16 @@ export const PRICE_TIERS: readonly PriceTier[] = [
   },
 ];
 
-export function tierFor(orderValueUsd: number): PriceTier {
-  const found = PRICE_TIERS.find(
+export function operationalProfile(orderValueUsd: number): OperationalProfile {
+  const found = OPERATIONAL_PROFILES.find(
     (t) => orderValueUsd >= t.minOrderUsd && orderValueUsd < t.maxOrderUsd,
   );
-  // Only reachable for negative input; treat as the cheapest tier.
-  return found ?? PRICE_TIERS[0]!;
+  // Only reachable for negative input; treat as the lightest profile.
+  return found ?? OPERATIONAL_PROFILES[0]!;
 }
+
+/** @deprecated Use operationalProfile(). Kept so call sites migrate incrementally. */
+export const tierFor = operationalProfile;
 
 /** Processing cost for an order value on a given rail. */
 export function processingFeeUsd(
@@ -233,7 +194,7 @@ export function resolveRail(
   orderValueUsd: number,
   requested?: PaymentRail,
 ): PaymentRail | null {
-  const tier = tierFor(orderValueUsd);
+  const tier = operationalProfile(orderValueUsd);
   if (!requested) return tier.preferredRail;
   return tier.allowedRails.includes(requested) ? requested : null;
 }

@@ -98,40 +98,6 @@ export interface Candidate {
   usesStockPhotos?: boolean;
 }
 
-export interface LandedCost {
-  sourcePriceUsd: number;
-  salesTaxUsd: number;
-  authenticationUsd: number;
-  inboundShippingUsd: number;
-  outboundShippingUsd: number;
-  packagingUsd: number;
-  /** Everything that does NOT scale with the sale price. */
-  fixedCostUsd: number;
-}
-
-export interface MarginProjection {
-  listPriceUsd: number;
-  /** Postage collected on top of the list price. Non-zero only in cheap tiers. */
-  shippingCollectedUsd: number;
-  /** listPriceUsd + shippingCollectedUsd. Margin is measured against this. */
-  revenueUsd: number;
-  landedCost: LandedCost;
-  processingFeeUsd: number;
-  /** eBay Partner Network commission earned on our own purchase. */
-  epnCreditUsd: number;
-  grossProfitUsd: number;
-  marginPct: number;
-  /** Which rail this projection assumed. Decisive above ~$2,500. */
-  rail: 'CARD' | 'ACH' | 'WIRE';
-  /** Price tier this order falls in. See tiers.ts. */
-  tierLabel: string;
-  /**
-   * Gross profit per hour of handling. The real gate at the cheap end, where a
-   * healthy-looking percentage can still be a bad use of 30 minutes.
-   */
-  effectiveHourlyUsd: number;
-}
-
 export type GateName =
   | 'PRICE_BAND'
   | 'COMP_CONFIDENCE'
@@ -156,7 +122,10 @@ export interface DealEvaluation {
   warnings: string[];
   comps: CompResult;
   liquidity: LiquidityResult;
-  projection: MarginProjection;
+  /** Full contribution breakdown. See economics.ts. */
+  economics: import('./economics.ts').DealEconomics;
+  /** The bid ceiling: pay more than this and the deal stops paying for itself. */
+  maxSourceUsd: number;
   discountToMarketPct: number;
 }
 

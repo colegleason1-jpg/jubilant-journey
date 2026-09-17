@@ -9,63 +9,64 @@ import {
   viableRungs,
   type RoutingSignals,
 } from '../src/offers.ts';
-import { projectMargin } from '../src/pricing.ts';
+import { computeEconomics } from '../src/economics.ts';
 
 describe('the fluid buy band', () => {
-  test('buying at 90-95% of market loses in the everyday bands', () => {
-    for (const market of [200, 600, 1000, 2600]) {
-      for (const frac of [0.9, 0.95]) {
-        assert.equal(
-          maxCustomerDiscount(market, market * frac),
-          null,
-          `market $${market} at ${frac * 100}% should have no viable list price`,
-        );
-      }
+  test('buying at 90% of market is workable from $2,600 up', () => {
+    // The old margin gate said this lost money at every price point under $5,000.
+    // It does not.
+    for (const market of [2600, 5000, 10000, 18000]) {
+      assert.ok(
+        maxCustomerDiscount(market, market * 0.9) !== null,
+        `market $${market} at 90% should be workable`,
+      );
     }
   });
 
-  test('but the SAME 90% is a good trade at high value', () => {
-    // This is the part a flat margin floor gets wrong. 1% of $10,000 is $100 — a
-    // real profit — and the cheap wire rail is what makes it reachable.
-    assert.ok(maxCustomerDiscount(10000, 9000)! > 0.05);
-    assert.ok(maxCustomerDiscount(18000, 16200)! > 0.05);
-    assert.ok(maxCustomerDiscount(5000, 4500)! > 0);
+  test('the $500 authentication add-on is what blocks 90% lower down', () => {
+    // At a $900 market the $80 Authenticity Guarantee fee is ~9% of the order, so
+    // buying at 90% cannot cover it. A real constraint, not a policy choice.
+    assert.equal(maxCustomerDiscount(900, 810), null);
+    assert.ok(maxCustomerDiscount(900, 810, { authenticationUsd: 0 }) !== null);
   });
 
-  test('even 95% works once the order is big enough', () => {
-    assert.equal(maxCustomerDiscount(2600, 2470), null);
-    assert.ok(maxCustomerDiscount(10000, 9500)! > 0.03);
+  test('the discount we can pass on grows with order size', () => {
+    assert.ok(maxCustomerDiscount(10000, 9000)! >= maxCustomerDiscount(2600, 2340)!);
   });
 
-  test('a $1,000 watch bought at $925 still loses badly', () => {
-    assert.ok(projectMargin(925, 900).grossProfitUsd < -140);
+  test('but buying above what we can list for is still refused', () => {
+    assert.equal(maxCustomerDiscount(1000, 1200), null);
   });
 
-  test('a $30 watch IS tradeable — you just buy at half', () => {
+  test('a $1,000 watch bought at $925 still loses — the floor is cash-real', () => {
+    assert.ok(computeEconomics({ sourcePriceUsd: 925, listPriceUsd: 900 }).contributionUsd < 0);
+  });
+
+  test('a $30 watch is tradeable, and the postage goes to the buyer', () => {
     const t = tradeability(30);
     assert.equal(t.tradeable, true);
-    assert.equal(t.tier.label, 'MICRO');
-    assert.ok(t.maxSourceUsd > 12 && t.maxSourceUsd < 16);
-    assert.ok(t.projectionAtCeiling.grossProfitUsd >= 10);
-    assert.ok(t.projectionAtCeiling.effectiveHourlyUsd > 60);
+    assert.equal(t.profile.label, 'MICRO');
+    assert.ok(t.economicsAtCeiling.contributionUsd >= 0.5);
+    assert.ok(t.economicsAtCeiling.shippingCollectedUsd > 0);
   });
 
   test('so is a $100 one', () => {
-    const t = tradeability(100);
-    assert.equal(t.tradeable, true);
-    assert.ok(t.maxSourceUsd > 50 && t.maxSourceUsd < 60);
+    assert.equal(tradeability(100).tradeable, true);
   });
 
-  test('the required discount narrows monotonically across the big picture', () => {
-    const required = [30, 900, 2600, 10000, 18000].map(
-      (m) => tradeability(m).requiredDiscountFromMarket,
-    );
-    assert.ok(required[0]! > 0.45, '$30 needs a deep discount');
-    assert.ok(required[required.length - 1]! < 0.12, '$18k needs very little');
-    assert.ok(required[0]! > required[required.length - 1]! + 0.3);
+  test('the required discount is modest at every price point', () => {
+    for (const m of [30, 100, 900, 2600, 10000, 18000]) {
+      const req = tradeability(m).requiredDiscountFromMarket;
+      // Worst case is ~25% at $900, where the $80 authentication add-on is nearly a
+      // tenth of the order. Everywhere else it is far shallower. The old margin gate
+      // demanded 27-53% across this same range.
+      assert.ok(req <= 0.26, `$${m} needs ${(req * 100).toFixed(1)}% off`);
+    }
+    assert.ok(tradeability(10000).requiredDiscountFromMarket < 0.13);
+    assert.ok(tradeability(2600).requiredDiscountFromMarket < 0.17);
   });
 
-  test('every band is tradeable at SOME price — nothing is structurally dead', () => {
+  test('every band is tradeable — nothing is structurally dead', () => {
     for (const m of [30, 60, 100, 250, 600, 900, 1500, 2600, 5000, 10000, 40000]) {
       assert.equal(tradeability(m).tradeable, true, `$${m} should be tradeable`);
     }
@@ -86,41 +87,37 @@ describe('offer ladder', () => {
     assert.deepEqual(ladder.map((r) => r.offerUsd), [720, 760, 800]);
   });
 
-  test('margin falls as we climb the ladder', () => {
+  test('contribution falls as we climb the ladder', () => {
     const ladder = buildOfferLadder(800, 1035);
-    assert.ok(ladder[0]!.marginPctIfAccepted > ladder[1]!.marginPctIfAccepted);
-    assert.ok(ladder[1]!.marginPctIfAccepted > ladder[2]!.marginPctIfAccepted);
+    assert.ok(ladder[0]!.contributionIfAcceptedUsd > ladder[1]!.contributionIfAcceptedUsd);
+    assert.ok(ladder[1]!.contributionIfAcceptedUsd > ladder[2]!.contributionIfAcceptedUsd);
   });
 
-  test('the first rung matches the docs/03 worked example', () => {
+  test('the first rung is the one to send', () => {
     const ladder = buildOfferLadder(800, 1035);
     assert.equal(ladder[0]!.offerUsd, 720);
-    assert.equal(
-      projectMargin(720, 1035).grossProfitUsd,
-      166.42,
-    );
+    assert.ok(ladder[0]!.viable);
   });
 
-  test('marks rungs that breach either floor as non-viable', () => {
-    // Asking price is too close to our list price for any rung to work.
-    const ladder = buildOfferLadder(980, 1035);
+  test('marks rungs that breach the floor as non-viable', () => {
+    // Asking price is above our list price: no rung can work.
+    const ladder = buildOfferLadder(1100, 1035);
     assert.ok(ladder.every((r) => !r.viable));
     assert.deepEqual(viableRungs(ladder), []);
   });
 
   test('truncates to only the rungs worth sending', () => {
     // Offering 10% and 5% below a $790 ask clears the floors; paying the ask does not.
-    const ladder = buildOfferLadder(790, 1035);
+    const ladder = buildOfferLadder(900, 1035);
     const viable = viableRungs(ladder);
-    assert.equal(viable.length, 2);
+    assert.ok(viable.length > 0 && viable.length < ladder.length);
     assert.equal(viable[0]!.discountFromAsk, 0.1);
-    assert.ok(!ladder[2]!.viable, 'paying the ask must not be viable here');
   });
 
-  test('reports absolute gross per rung, which is what matters at high value', () => {
+  test('reports absolute contribution per rung, which is what matters at high value', () => {
     const ladder = buildOfferLadder(8900, 9000);
-    assert.ok(ladder[0]!.grossProfitIfAcceptedUsd > ladder[2]!.grossProfitIfAcceptedUsd);
-    assert.ok(ladder.every((r) => typeof r.grossProfitIfAcceptedUsd === 'number'));
+    assert.ok(ladder[0]!.contributionIfAcceptedUsd > ladder[2]!.contributionIfAcceptedUsd);
+    assert.ok(ladder.every((r) => typeof r.contributionPerHourUsd === 'number'));
   });
 
   test('can be told not to fall back to paying the ask', () => {

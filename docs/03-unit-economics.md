@@ -81,11 +81,11 @@ bidCeiling(1150) → { listPriceUsd: 1035, maxSourcePriceUsd: 762.86 }
 *"Market says $1,150. We list at $1,035. Do not pay more than $762 for it."* That one
 number is what the daily digest puts in front of you.
 
-> ⚠️ **$762 is 66% of market — but that ratio is specific to this price point.**
-> The required discount is fluid: ~50% on a $30 watch, ~66% here, ~90% on a $10,000
-> one. "Buy at 90% of market" loses money at $1,000 and is a perfectly good trade at
-> $10,000. The full table, and why the payment rail decides the top end, is in
-> [docs/12](12-buy-box-and-offers.md) — the most important page in this repo.
+> ⚠️ **This whole section uses the old margin-percentage model and understates what
+> you can pay.** The current engine gates on **contribution**, not margin: on a $1,150
+> market the ceiling is **$863 (75%)**, not $763 (66%). Across the range the required
+> discount is 11–25%, not 27–53%. See [docs/12](12-buy-box-and-offers.md) for the
+> current numbers — that page supersedes the tables above.
 
 ### The $2,000+ variant is better per unit
 

@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from . import pricing
+from . import economics
 from .ebay import Listing
 
 
@@ -22,10 +22,11 @@ class Evaluation:
     list_usd: float
     max_bid_usd: float
     discount_pct: float
-    projection: pricing.Projection
+    econ: economics.DealEconomics
     gates_failed: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
-    offer_ladder: list[pricing.OfferRung] = field(default_factory=list)
+    offer_ladder: list[dict] = field(default_factory=list)
+    rank_score: float = 0.0
 
     @property
     def passed(self) -> bool:
@@ -42,21 +43,13 @@ class Evaluation:
             "list_usd": self.list_usd,
             "max_bid_usd": self.max_bid_usd,
             "discount_pct": self.discount_pct,
-            "margin_pct": self.projection.margin_pct,
-            "gross_profit_usd": self.projection.gross_profit_usd,
+            "margin_pct": self.econ.contribution_margin_pct,
+            "gross_profit_usd": self.econ.contribution_usd,
             "seller": self.listing.seller_username,
             "seller_feedback": self.listing.seller_feedback_score,
             "seller_positive": self.listing.seller_positive_pct,
             "warnings": self.warnings,
-            "offer_ladder": [
-                {
-                    "offer_usd": r.offer_usd,
-                    "discount_from_ask": r.discount_from_ask,
-                    "margin_pct_if_accepted": r.margin_pct_if_accepted,
-                    "viable": r.viable,
-                }
-                for r in self.offer_ladder
-            ],
+            "offer_ladder": self.offer_ladder,
         }
 
     def to_row(self, model_id: str) -> dict[str, Any]:
@@ -81,7 +74,7 @@ class Evaluation:
             "market_price_usd": self.market_usd,
             "list_price_usd": self.list_usd,
             "max_bid_usd": self.max_bid_usd,
-            "projected_margin_pct": self.projection.margin_pct,
+            "projected_margin_pct": self.econ.contribution_margin_pct,
             "discount_to_market_pct": self.discount_pct,
         }
 
@@ -99,28 +92,24 @@ def evaluate(listing: Listing, market_usd: float, cfg) -> Evaluation:
 
     # Shipping is part of the buy price, never an afterthought.
     landed = listing.landed_source_usd
-    list_usd = pricing.solve_list_price(market_usd, p)
-    max_bid = pricing.max_viable_source_price(list_usd, p)
-    projection = pricing.project_margin(landed, list_usd, p)
-    discount = pricing.discount_to_market(landed, market_usd)
+    list_usd = economics.solve_list_price(market_usd, p)
+    max_bid = economics.max_source_price(list_usd, p)
+    econ = economics.compute_economics(landed, list_usd, p)
+    accept, reasons, rank = economics.judge_deal(econ, p)
+    discount = economics.discount_to_market(landed, market_usd)
 
     if landed < g.min_source_price_usd or landed > g.max_source_price_usd:
         gates.append("PRICE_BAND")
 
-    # Our entire "not as described" defence rests on third-party authentication.
-    if pricing.auth_tier(landed) == "NONE":
-        gates.append("AUTHENTICATION_ELIGIBLE")
-
     if discount < g.min_discount_to_market_pct:
         gates.append("DISCOUNT_TO_MARKET")
 
-    # Both tier floors: the percentage (protects cheap units from not being worth the
-    # handling) and the absolute dollars (protects expensive ones from a flattering
-    # percentage). See tiers.py.
-    floor_failures = pricing.meets_floors(projection, p)
-    if floor_failures:
+    # NOT a margin percentage. The floor is positive contribution after real cash
+    # costs; anything above that is a capacity question. A $1 contribution plus a new
+    # customer beats an idle hour. See economics.py.
+    if not accept:
         gates.append("MARGIN")
-        warnings.append(f"margin floors failed: {', '.join(floor_failures)}")
+        warnings.extend(reasons)
 
     if (
         listing.seller_feedback_score < g.min_seller_feedback_score
@@ -138,16 +127,34 @@ def evaluate(listing: Listing, market_usd: float, cfg) -> Evaluation:
     # about to cancel. Treat it as a warning, not a win.
     if discount > g.suspicious_discount_pct:
         gates.append("TOO_GOOD_TO_BE_TRUE")
-        warnings.append(f"{discount * 100:.0f}% under market — verify before trusting")
+        warnings.append(f"{discount * 100:.0f}% under market -- verify before trusting")
 
+    if econ.contribution_usd > 0 and econ.contribution_per_hour_usd < 25:
+        warnings.append(
+            f"only ${econ.contribution_per_hour_usd:.0f}/hr -- fine when you have "
+            f"spare capacity, skip it when you don't"
+        )
     if len(listing.image_urls) < 4:
-        warnings.append("few photos — ask the seller for more before buying")
+        warnings.append("few photos -- ask the seller for more before buying")
     if listing.shipping_usd > 25:
         warnings.append(f"high inbound shipping (${listing.shipping_usd:.2f})")
 
-    ladder = (
-        pricing.build_offer_ladder(landed, list_usd, p) if listing.accepts_offers else []
-    )
+    ladder = []
+    if listing.accepts_offers:
+        for i, d in enumerate([0.10, 0.05, 0.0]):
+            offer = round(landed * (1 - d), 2)
+            oe = economics.compute_economics(offer, list_usd, p)
+            ok, _, _ = economics.judge_deal(oe, p)
+            ladder.append(
+                {
+                    "step": i + 1,
+                    "discount_from_ask": d,
+                    "offer_usd": offer,
+                    "contribution_if_accepted_usd": oe.contribution_usd,
+                    "margin_pct_if_accepted": oe.contribution_margin_pct,
+                    "viable": ok,
+                }
+            )
 
     return Evaluation(
         listing=listing,
@@ -155,8 +162,9 @@ def evaluate(listing: Listing, market_usd: float, cfg) -> Evaluation:
         list_usd=list_usd,
         max_bid_usd=max_bid,
         discount_pct=discount,
-        projection=projection,
+        econ=econ,
         gates_failed=gates,
         warnings=warnings,
         offer_ladder=ladder,
+        rank_score=rank,
     )

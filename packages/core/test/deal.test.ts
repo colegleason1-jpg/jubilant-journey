@@ -51,12 +51,12 @@ describe('evaluateDeal — the happy path', () => {
 
   test('prices against the recency-weighted market, not the ask', () => {
     assert.equal(result.comps.marketPriceUsd, 1150);
-    assert.equal(result.projection.listPriceUsd, 1035);
+    assert.equal(result.economics.revenueUsd, 1035);
   });
 
-  test('projects the expected margin', () => {
-    assert.equal(result.projection.grossProfitUsd, 166.42);
-    assert.ok(result.projection.marginPct > 0.16);
+  test('reports contribution and the bid ceiling', () => {
+    assert.ok(result.economics.contributionUsd > 100);
+    assert.ok(result.maxSourceUsd > result.economics.sourceCostUsd);
   });
 
   test('reports the discount being captured', () => {
@@ -120,14 +120,23 @@ describe('evaluateDeal — gates', () => {
   });
 
   test('rejects insufficient discount', () => {
-    const r = evaluateDeal(
-      candidate({ priceUsd: 1050 }),
+    const r = evaluateDeal(candidate({ priceUsd: 1050 }), GOOD_SALES, DEFAULT_DEAL_CONFIG, NOW);
+    assert.ok(r.gatesFailed.includes('DISCOUNT_TO_MARKET'));
+    assert.ok(r.gatesFailed.includes('MARGIN'), 'buying above our list price loses cash');
+  });
+
+  test('accepts a thin-but-positive deal that a margin gate would have killed', () => {
+    // Buying at $850 against a $1,150 market: 26% under, where the old 12% margin
+    // gate demanded 34%. It still contributes real money — and a customer, which a
+    // margin percentage cannot see at all.
+    const thin = evaluateDeal(
+      candidate({ priceUsd: 850 }),
       GOOD_SALES,
-      DEFAULT_DEAL_CONFIG,
+      { ...DEFAULT_DEAL_CONFIG, minDiscountToMarketPct: 0.1 },
       NOW,
     );
-    assert.ok(r.gatesFailed.includes('DISCOUNT_TO_MARKET'));
-    assert.ok(r.gatesFailed.includes('MARGIN'));
+    assert.ok(thin.economics.contributionUsd > 0, `contribution ${thin.economics.contributionUsd}`);
+    assert.ok(!thin.gatesFailed.includes('MARGIN'));
   });
 
   test('treats an implausible bargain as a red flag, not a win', () => {
@@ -195,8 +204,9 @@ describe('bidCeiling — what the daily digest shows you', () => {
   test('turns a market price into a list price and a hard maximum bid', () => {
     const { listPriceUsd, maxSourcePriceUsd } = bidCeiling(1150);
     assert.equal(listPriceUsd, 1035);
-    assert.ok(maxSourcePriceUsd > 750 && maxSourcePriceUsd < 775);
-    // The ceiling must be below what we would list it for, obviously.
-    assert.ok(maxSourcePriceUsd < listPriceUsd);
+    // ~$863, i.e. 75% of market. The old margin-percent gate capped this at $763
+    // (66%) and rejected everything in between — much of the real deal flow.
+    assert.ok(maxSourcePriceUsd > 840 && maxSourcePriceUsd < 890);
+    assert.ok(maxSourcePriceUsd < listPriceUsd, 'never pay more than we can list for');
   });
 });
