@@ -70,6 +70,7 @@ cd services/scout  && python -m unittest discover -s tests
 cd services/scout  && python -m scout.main --replay  # full pipeline, no credentials
 cd services/scout  && python -m scout.main --smoke   # verify eBay credentials
 cd services/scout  && python -m scout.calibrate --demo
+cd services/scout  && python -m scout.fit_shipping --demo   # curve vs real rates
 ```
 
 ## Conventions
@@ -86,5 +87,12 @@ cd services/scout  && python -m scout.calibrate --demo
 ## Current state
 
 Engine and scanner are built and tested. **Nothing has run against live data.** Every
-threshold is still an untested guess. The next real step is shadow mode —
-[docs/16](docs/16-shadow-mode-runbook.md).
+threshold is still an untested guess.
+
+**Phase 0 in progress** ([docs/17](docs/17-foundation-and-stack.md)): the Shippo
+client and `fit_shipping` are built and tested; they need a token and an origin
+address to produce real numbers. Do this BEFORE shadow mode, so shadow data records
+against real shipping costs rather than retail ones — otherwise you calibrate against
+a cost that is wrong on every unit.
+
+Then shadow mode — [docs/16](docs/16-shadow-mode-runbook.md).
