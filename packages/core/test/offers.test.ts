@@ -23,11 +23,20 @@ describe('the fluid buy band', () => {
     }
   });
 
-  test('the $500 authentication add-on is what blocks 90% lower down', () => {
-    // At a $900 market the $80 Authenticity Guarantee fee is ~9% of the order, so
-    // buying at 90% cannot cover it. A real constraint, not a policy choice.
-    assert.equal(maxCustomerDiscount(900, 810), null);
-    assert.ok(maxCustomerDiscount(900, 810, { authenticationUsd: 0 }) !== null);
+  test('electing the optional $80 add-on costs real headroom', () => {
+    // Authenticity Guarantee is buyer-elected and OPTIONAL in the $500-$1,999 band,
+    // and we are the buyer. Paying it by default cost ~9% of a $900 order. eBay
+    // Money Back Guarantee already covers us against a counterfeit purchase.
+    const withoutIt = tradeability(900).maxSourceUsd;
+    const withIt = tradeability(900, { electAuthenticity: true }).maxSourceUsd;
+    assert.ok(withoutIt - withIt > 70, `costs ${withoutIt - withIt}`);
+    assert.ok(withoutIt / 900 > 0.8, 'not paying it gets us to ~84% of market');
+  });
+
+  test('above $2,000 the certificate is free, so it is pure upside', () => {
+    const elected = tradeability(3000, { electAuthenticity: true }).maxSourceUsd;
+    const not = tradeability(3000).maxSourceUsd;
+    assert.equal(elected, not, 'the flag is irrelevant above the free threshold');
   });
 
   test('the discount we can pass on grows with order size', () => {
@@ -57,13 +66,12 @@ describe('the fluid buy band', () => {
   test('the required discount is modest at every price point', () => {
     for (const m of [30, 100, 900, 2600, 10000, 18000]) {
       const req = tradeability(m).requiredDiscountFromMarket;
-      // Worst case is ~25% at $900, where the $80 authentication add-on is nearly a
-      // tenth of the order. Everywhere else it is far shallower. The old margin gate
-      // demanded 27-53% across this same range.
-      assert.ok(req <= 0.26, `$${m} needs ${(req * 100).toFixed(1)}% off`);
+      // 11-23% across the whole range. The old margin gate demanded 27-53%.
+      assert.ok(req <= 0.24, `$${m} needs ${(req * 100).toFixed(1)}% off`);
     }
     assert.ok(tradeability(10000).requiredDiscountFromMarket < 0.13);
     assert.ok(tradeability(2600).requiredDiscountFromMarket < 0.17);
+    assert.ok(tradeability(900).requiredDiscountFromMarket < 0.17);
   });
 
   test('every band is tradeable — nothing is structurally dead', () => {
@@ -108,7 +116,7 @@ describe('offer ladder', () => {
 
   test('truncates to only the rungs worth sending', () => {
     // Offering 10% and 5% below a $790 ask clears the floors; paying the ask does not.
-    const ladder = buildOfferLadder(900, 1035);
+    const ladder = buildOfferLadder(980, 1035);
     const viable = viableRungs(ladder);
     assert.ok(viable.length > 0 && viable.length < ladder.length);
     assert.equal(viable[0]!.discountFromAsk, 0.1);

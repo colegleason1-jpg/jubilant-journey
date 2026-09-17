@@ -36,16 +36,51 @@ import type { AuthTier } from './types.ts';
 
 // ───────────────────── authentication & list pricing ────────────────────────────
 
-/** eBay Authenticity Guarantee bands, keyed on the SOURCE price. See docs/01 §4. */
+/**
+ * eBay Authenticity Guarantee bands, keyed on the SOURCE price.
+ *
+ *   FREE   $2,000+            automatic, eBay pays for both sides
+ *   ADDON  $500 – $1,999.99   OPTIONAL, $80, elected and paid by the BUYER
+ *   NONE   under $500         not offered
+ *
+ * The programme covers sneakers, watches, handbags, jewellery, streetwear and
+ * trading cards — it is eBay's collector-item authentication system, and the name
+ * for it is Authenticity Guarantee.
+ */
 export function authTierForPrice(sourcePriceUsd: number): AuthTier {
   if (sourcePriceUsd >= 2000) return 'FREE';
   if (sourcePriceUsd >= 500) return 'ADDON';
   return 'NONE';
 }
 
-/** Free at $2,000+, an $80 buyer-elected add-on from $500, unavailable below. */
-export function authenticationCostUsd(sourcePriceUsd: number, addonUsd = 80): number {
-  return authTierForPrice(sourcePriceUsd) === 'ADDON' ? addonUsd : 0;
+/**
+ * What authentication costs US.
+ *
+ * ⚠️ DEFAULT ZERO IN THE ADDON BAND, and that is a deliberate reversal.
+ *
+ * An earlier model charged the $80 add-on as a mandatory cost on every $500–$1,999
+ * purchase. It is not mandatory — it is buyer-elected, and we are the buyer. Paying
+ * it by default cost ~9% of a $900 order and made that band the tightest in the
+ * entire range for no reason.
+ *
+ * We do not need to buy it, because our buy-side protection is already free:
+ * **eBay Money Back Guarantee** covers counterfeit and not-as-described on every
+ * purchase, for 30 days, overriding the seller's own return policy. That is our
+ * remedy if a watch turns out wrong.
+ *
+ * And above $2,000 Authenticity Guarantee is automatic and free anyway, so the
+ * certificate costs us nothing exactly where the stakes are highest.
+ *
+ * Elect it deliberately (`electAuthenticity: true`) when the certificate is worth
+ * $80 to you on a specific unit — a marginal seller, a commonly-faked reference, or
+ * a customer who asks for it. Not as a blanket policy.
+ */
+export function authenticationCostUsd(
+  sourcePriceUsd: number,
+  opts: { elect?: boolean; addonUsd?: number } = {},
+): number {
+  const { elect = false, addonUsd = 80 } = opts;
+  return elect && authTierForPrice(sourcePriceUsd) === 'ADDON' ? addonUsd : 0;
 }
 
 /** List price = market less the discount we advertise, rounded to look like retail. */
@@ -191,6 +226,12 @@ export interface EconomicsInput {
   listPriceUsd: number;
   rail?: PaymentRail;
   isNewCustomer?: boolean;
+  /**
+   * Pay for the optional $80 Authenticity Guarantee add-on on a $500–$1,999 source
+   * price. Default false — see authenticationCostUsd(). Above $2,000 the programme
+   * is free and automatic, so this flag is irrelevant there.
+   */
+  electAuthenticity?: boolean;
   salesTaxRate?: number;
   hasResaleCertificate?: boolean;
   epnCommissionRate?: number;
@@ -254,10 +295,11 @@ export function computeEconomics(input: EconomicsInput): DealEconomics {
 
   const landedSource = sourcePriceUsd + inboundShippingUsd;
   const salesTaxUsd = hasResaleCertificate ? 0 : sourcePriceUsd * salesTaxRate;
-  // Derived from the source price by default. Passing 0 explicitly is how you model
-  // a watch you are not putting through Authenticity Guarantee; leaving it undefined
-  // must NOT silently mean free, or every bid ceiling comes out $80 too high.
-  const authenticationUsd = input.authenticationUsd ?? authenticationCostUsd(sourcePriceUsd);
+  // Derived consistently everywhere (an explicit override still wins), so the bid
+  // ceiling and the gate can never disagree about it.
+  const authenticationUsd =
+    input.authenticationUsd ??
+    authenticationCostUsd(sourcePriceUsd, { elect: input.electAuthenticity ?? false });
   const outboundShippingUsd = shippingCostUsd(listPriceUsd, shipping);
   const packaging = packagingCostUsd(listPriceUsd);
   const processing = processingFeeUsd(revenueUsd, rail);

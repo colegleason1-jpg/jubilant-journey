@@ -204,9 +204,9 @@ describe('bidCeiling — what the daily digest shows you', () => {
   test('turns a market price into a list price and a hard maximum bid', () => {
     const { listPriceUsd, maxSourcePriceUsd } = bidCeiling(1150);
     assert.equal(listPriceUsd, 1035);
-    // ~$863, i.e. 75% of market. The old margin-percent gate capped this at $763
-    // (66%) and rejected everything in between — much of the real deal flow.
-    assert.ok(maxSourcePriceUsd > 840 && maxSourcePriceUsd < 890);
+    // ~$943, i.e. 82% of market. Was $763 (66%) under the margin-percent gate, then
+    // $863 (75%) while we were needlessly paying the $80 authentication add-on.
+    assert.ok(maxSourcePriceUsd > 920 && maxSourcePriceUsd < 970);
     assert.ok(maxSourcePriceUsd < listPriceUsd, 'never pay more than we can list for');
   });
 });

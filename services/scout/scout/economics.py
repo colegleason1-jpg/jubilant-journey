@@ -22,7 +22,15 @@ from .tiers import operational_profile, processing_fee
 
 
 def auth_tier(source_price_usd: float) -> str:
-    """eBay Authenticity Guarantee bands: free at $2,000+, $80 add-on from $500."""
+    """eBay Authenticity Guarantee bands, keyed on the SOURCE price.
+
+        FREE   $2,000+           automatic, eBay pays for both sides
+        ADDON  $500 - $1,999.99  OPTIONAL, $80, elected and paid by the BUYER
+        NONE   under $500        not offered
+
+    The programme covers sneakers, watches, handbags, jewellery, streetwear and
+    trading cards -- it is eBay's collector-item authentication system.
+    """
     if source_price_usd >= 2000:
         return "FREE"
     if source_price_usd >= 500:
@@ -30,8 +38,23 @@ def auth_tier(source_price_usd: float) -> str:
     return "NONE"
 
 
-def authentication_cost(source_price_usd: float, addon_usd: float = 80.0) -> float:
-    return addon_usd if auth_tier(source_price_usd) == "ADDON" else 0.0
+def authentication_cost(source_price_usd: float, elect: bool = False,
+                        addon_usd: float = 80.0) -> float:
+    """What authentication costs US.
+
+    DEFAULT ZERO in the ADDON band, deliberately. The $80 is buyer-elected and we are
+    the buyer; paying it by default cost ~9% of a $900 order and made that band the
+    tightest in the whole range for no reason.
+
+    We do not need to buy it: eBay Money Back Guarantee already covers counterfeit
+    and not-as-described on every purchase for 30 days, overriding the seller's own
+    return policy. And above $2,000 Authenticity Guarantee is automatic and free, so
+    the certificate costs nothing exactly where the stakes are highest.
+
+    Elect it per-unit when the certificate is worth $80 on that specific watch -- a
+    marginal seller, a commonly-faked reference, a customer who asks. Not by policy.
+    """
+    return addon_usd if (elect and auth_tier(source_price_usd) == "ADDON") else 0.0
 
 
 def shipping_cost(declared_value_usd: float, cfg) -> float:
@@ -121,7 +144,7 @@ class DealEconomics:
 
 def compute_economics(source_price_usd: float, list_price_usd: float, cfg,
                       inbound_shipping_usd: float = 0.0, rail: str | None = None,
-                      is_new_customer: bool = True,
+                      is_new_customer: bool = True, elect_authenticity: bool = False,
                       authentication_usd: float | None = None) -> DealEconomics:
     profile = operational_profile(list_price_usd)
     used_rail = rail or profile.preferred_rail
@@ -133,10 +156,12 @@ def compute_economics(source_price_usd: float, list_price_usd: float, cfg,
 
     landed_source = source_price_usd + inbound_shipping_usd
     sales_tax = 0.0 if cfg.has_resale_certificate else source_price_usd * cfg.sales_tax_rate
-    # Derived from the source price by default. Leaving it undefined must NOT silently
-    # mean free, or every bid ceiling comes out $80 too high.
-    auth = authentication_usd if authentication_usd is not None else authentication_cost(
-        source_price_usd, cfg.auth_addon_usd
+    # Derived consistently everywhere (an explicit override still wins), so the bid
+    # ceiling and the gate can never disagree about it.
+    auth = (
+        authentication_usd
+        if authentication_usd is not None
+        else authentication_cost(source_price_usd, elect_authenticity, cfg.auth_addon_usd)
     )
     outbound = shipping_cost(list_price_usd, cfg)
     packaging = packaging_cost(list_price_usd)

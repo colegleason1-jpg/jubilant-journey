@@ -71,22 +71,56 @@ rejected only when something better competes for the same hour or the same dolla
 
 ### What this does to the bid ceiling
 
-| market | list | max buy | **buy %** | old margin gate allowed |
+| market | list | max buy | **buy %** | old margin gate |
 |---:|---:|---:|---:|---:|
 | $30 | $27 | $23.10 | **77%** | (called it impossible) |
 | $100 | $90 | $84.27 | **84%** | (called it impossible) |
-| $900 | $810 | $674.94 | **75%** | 63% |
-| $1,150 | $1,035 | $863.42 | **75%** | 66% |
+| $350 | $315 | $299.89 | **86%** | (called it impossible) |
+| $900 | $810 | $754.94 | **84%** | 63% |
+| $1,150 | $1,035 | $943.42 | **82%** | 66% |
 | $2,600 | $2,340 | $2,196.92 | **84%** | 73% |
 | $10,000 | $9,000 | $8,880.95 | **89%** | 89% |
-| $18,000 | $16,200 | $16,044.95 | **89%** | 90% |
 
-The required discount is now **11–25% across the whole range**, not 27–53%. That is
+The required discount is now **11–23% across the whole range**, not 27–53%. That is
 several times the deal flow, at every price point.
 
-> **The $900–$1,150 rows are the tightest (75%)** because the **$80 Authenticity
-> Guarantee add-on** is ~9% of the order there. It's free above $2,000 and unavailable
-> below $500, so the middle carries it. Real constraint, not a policy choice.
+## Authentication is optional, and we don't buy it by default
+
+eBay's collector-item authentication programme — **Authenticity Guarantee**, covering
+sneakers, watches, handbags, jewellery, streetwear and trading cards — has three bands
+for watches:
+
+| Source price | Authentication | Who pays |
+|---|---|---|
+| **$2,000+** | Automatic | **eBay. Free to both sides.** |
+| **$500–$1,999.99** | **Optional** | **$80, elected by the BUYER** |
+| Under $500 | Not offered | — |
+
+**We are the buyer, so in the middle band that $80 is ours and it is optional.** An
+earlier version of this model charged it as a mandatory cost on every purchase in that
+range. It isn't mandatory, and paying it was costing ~9% of a $900 order — which is
+what made that band the tightest in the whole book at 75%. Not electing it takes it to
+**84%**.
+
+**We don't need to buy it, because our buy-side protection is already free.** eBay
+**Money Back Guarantee** covers counterfeit and not-as-described on every purchase for
+30 days, and it overrides the seller's own return policy. If a watch turns out wrong,
+that is our remedy — we don't need to have pre-paid $80 for the privilege.
+
+And above $2,000 the certificate is **free and automatic**, so it costs us nothing
+exactly where the stakes are highest.
+
+**When to elect it anyway** (`electAuthenticity: true`, per unit, never as a policy):
+- a seller with thin history on a commonly-faked reference
+- a reference with a known high-quality counterfeit in circulation
+- a customer who asks for it and will absorb the cost
+
+> **Two different protections, and it's worth keeping them straight:**
+> **Money Back Guarantee** protects *us* when we buy (reactive, free, always).
+> **Authenticity Guarantee** produces a certificate we can hand *our* customer
+> (proactive, free above $2,000). Our sell-side defence below $2,000 is our own
+> inspection, logged serial and 20 photos — which we do on every unit anyway under
+> the routing rules in [docs/13](13-fulfilment-routing.md).
 
 ---
 

@@ -107,9 +107,17 @@ third party certifies the watch *before we ever take possession* — which is pr
 the evidence that kills an INAD chargeback and the thing our customers are actually
 paying us for.
 
-**Rule: we only source watches eligible for Authenticity Guarantee.** That sets our
-floor at ~$500 purchase price and shapes the entire target band in
-[docs/03](03-unit-economics.md).
+> **Correction to an earlier draft:** this section used to say "only source
+> AG-eligible watches" and treated the $80 add-on as a cost of doing business. Both
+> were wrong. The add-on is **optional and buyer-elected**, we are the buyer, and
+> paying it by default cost ~9% of a $900 order for no benefit we weren't already
+> getting free from **eBay Money Back Guarantee** — which covers counterfeit and
+> not-as-described on every purchase for 30 days regardless.
+>
+> **The actual rule:** take the free certificate above $2,000 because it costs
+> nothing. Below that, don't pay for it by default — elect it per-unit when a
+> specific seller or reference warrants it. There is no $500 sourcing floor.
+> See [docs/12](12-buy-box-and-offers.md).
 
 ## 5. Google Business Profile will not accept you
 
