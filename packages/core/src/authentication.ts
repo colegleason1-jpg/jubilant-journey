@@ -455,80 +455,153 @@ export function findProhibitedClaims(copy: string): string[] {
  * and service — the things a serious dealer talks about. The sourcing engine stays
  * internal where it belongs.
  */
-export interface OperationFacts {
-  compWindowDays: number;
-  photosPerWatch: number;
+export interface UnitFacts {
+  orderValueUsd: number;
+  /** Direct-ship means the watch never passes through our hands. */
+  fulfilmentRoute: 'VIA_OPERATOR' | 'DIRECT_TO_CUSTOMER';
+  thirdPartyAuthenticated: boolean;
+  /** How many photographs WE actually took. Zero on a direct ship. */
+  photosTaken: number;
   serialLogged: boolean;
   intakeVideoRecorded: boolean;
-  thirdPartyAuthenticated: boolean;
-  insuredSignatureShipping: boolean;
-  returnWindowDays: number;
   conditionReportIncluded: boolean;
+  insuredSignatureShipping: boolean;
+  /** null means no returns offered. */
+  returnWindowDays: number | null;
+  compWindowDays: number;
 }
 
-export const DEFAULT_OPERATION: OperationFacts = {
-  compWindowDays: 90,
-  photosPerWatch: 20,
+/**
+ * Order value at or above which we run the full intake SOP — photographs, serial
+ * log, condition report, packing video. Below it the handling budget is minutes, not
+ * half an hour, and the copy must not promise otherwise.
+ */
+export const FULL_SERVICE_THRESHOLD_USD = 500;
+
+export const DEFAULT_UNIT: UnitFacts = {
+  orderValueUsd: 1035,
+  fulfilmentRoute: 'VIA_OPERATOR',
+  thirdPartyAuthenticated: false,
+  photosTaken: 20,
   serialLogged: true,
   intakeVideoRecorded: true,
-  thirdPartyAuthenticated: false,
-  insuredSignatureShipping: true,
-  returnWindowDays: 30,
   conditionReportIncluded: true,
+  insuredSignatureShipping: true,
+  returnWindowDays: null,
+  compWindowDays: 90,
 };
 
-/** Process claims, strongest first. Each maps to something we genuinely do. */
-export function positioningClaims(
-  facts: OperationFacts = DEFAULT_OPERATION,
-): string[] {
+/**
+ * Claims true of THIS unit — not a static block.
+ *
+ * Two facts silently invalidate most of the list, so they are enforced rather than
+ * remembered:
+ *
+ *   • DIRECT SHIP. The watch never reaches us, so we cannot have photographed it,
+ *     logged its serial, or filmed the packing. Claiming any of that would be false
+ *     on exactly the orders where we have the least visibility.
+ *   • BELOW THE FULL-SERVICE THRESHOLD. A $60 watch gets minutes of handling, not a
+ *     20-shot session under controlled lighting.
+ */
+export function positioningClaims(unit: UnitFacts = DEFAULT_UNIT): string[] {
   const claims: string[] = [];
+  const inHand = unit.fulfilmentRoute === 'VIA_OPERATOR';
+  const fullService = unit.orderValueUsd >= FULL_SERVICE_THRESHOLD_USD;
 
-  if (facts.thirdPartyAuthenticated) {
+  if (unit.thirdPartyAuthenticated) {
     claims.push(
       'Authenticated by a third-party specialist through a multi-point physical ' +
         'inspection, and supplied with their certification.',
     );
   }
-  if (facts.serialLogged) {
+  if (inHand && unit.serialLogged) {
     claims.push(
       'Serial number recorded and matched at dispatch, so the watch you receive is ' +
         'provably the watch we documented.',
     );
   }
-  if (facts.photosPerWatch >= 10) {
+  if (inHand && fullService && unit.photosTaken >= 10) {
     claims.push(
-      `${facts.photosPerWatch} photographs taken in hand under controlled lighting — ` +
+      `${unit.photosTaken} photographs taken in hand under controlled lighting — ` +
         'including every flaw, photographed deliberately rather than avoided.',
     );
+  } else if (inHand && unit.photosTaken > 0) {
+    claims.push(`Photographed in hand before dispatch — ${unit.photosTaken} images.`);
   }
-  if (facts.conditionReportIncluded) {
+  if (inHand && fullService && unit.conditionReportIncluded) {
     claims.push(
       'A written condition report covering dial, case, bracelet, crystal and ' +
         'timekeeping, assessed to the same standard on every watch.',
     );
   }
   claims.push(
-    `Priced against ${facts.compWindowDays} days of verified market data, so the ` +
+    `Priced against ${unit.compWindowDays} days of verified market data, so the ` +
       'number in front of you is defensible.',
   );
-  if (facts.intakeVideoRecorded) {
+  if (inHand && fullService && unit.intakeVideoRecorded) {
     claims.push(
       'Unboxing and packing recorded end to end, and retained against your order.',
     );
   }
-  if (facts.insuredSignatureShipping) {
+  if (unit.insuredSignatureShipping) {
     claims.push('Dispatched fully insured, signature required, in unbranded packaging.');
   }
-  claims.push(
-    `${facts.returnWindowDays}-day returns, no questions asked, from a named business ` +
-      'with a phone number that reaches a person.',
-  );
+  if (unit.returnWindowDays !== null) {
+    claims.push(
+      `${unit.returnWindowDays}-day returns, no questions asked, from a named ` +
+        'business with a phone number that reaches a person.',
+    );
+  } else {
+    // With no return window the trust burden moves entirely onto disclosure, so say
+    // that plainly rather than leaving a silence where the guarantee used to be.
+    claims.push(
+      'Every watch is described exactly as it is, flaws included — so there are no ' +
+        'surprises to return. Questions before you buy reach a named person.',
+    );
+  }
 
   return claims;
 }
 
-export function positioningBlock(facts: OperationFacts = DEFAULT_OPERATION): string {
-  return positioningClaims(facts)
+/**
+ * How defensible is this unit's story?
+ *
+ * A direct-shipped, sub-threshold, no-returns order has almost nothing true to say
+ * about it, and that is where conversion and disputes both go wrong. The warning is
+ * a signal about the configuration, not about the copy.
+ */
+export function positioningStrength(unit: UnitFacts = DEFAULT_UNIT): {
+  claimCount: number;
+  thin: boolean;
+  warnings: string[];
+} {
+  const claims = positioningClaims(unit);
+  const warnings: string[] = [];
+
+  if (unit.fulfilmentRoute === 'DIRECT_TO_CUSTOMER') {
+    warnings.push(
+      'direct ship: no photos, no serial log, no packing video — the three things ' +
+        'that win an "item not as described" dispute (docs/13)',
+    );
+  }
+  if (unit.orderValueUsd < FULL_SERVICE_THRESHOLD_USD) {
+    warnings.push(
+      `below the $${FULL_SERVICE_THRESHOLD_USD} full-service threshold: light intake, ` +
+        'so the copy stays light too',
+    );
+  }
+  if (unit.returnWindowDays === null && unit.orderValueUsd >= 1000) {
+    warnings.push(
+      'no returns on a four-figure order: a customer who cannot return files a ' +
+        'chargeback instead, and a dispute costs more than a return',
+    );
+  }
+
+  return { claimCount: claims.length, thin: claims.length <= 3, warnings };
+}
+
+export function positioningBlock(unit: UnitFacts = DEFAULT_UNIT): string {
+  return positioningClaims(unit)
     .map((c) => `• ${c}`)
     .join('\n');
 }

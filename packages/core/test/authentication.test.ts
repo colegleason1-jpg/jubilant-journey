@@ -2,9 +2,10 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ACCURATE_RELATIONSHIP_PHRASINGS,
-  DEFAULT_OPERATION,
+  DEFAULT_UNIT,
   findSourcingDisclosures,
   positioningClaims,
+  positioningStrength,
   reviewCustomerCopy,
   authenticationCostFor,
   authenticationOffer,
@@ -167,33 +168,86 @@ describe('copy is checked before it ships', () => {
 
 describe('positioning copy', () => {
   test('every generated claim passes both guards', () => {
-    for (const claim of positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true })) {
-      const r = reviewCustomerCopy(claim);
-      assert.equal(r.ok, true, `${claim} -> ${JSON.stringify(r)}`);
+    for (const unit of [
+      { ...DEFAULT_UNIT, thirdPartyAuthenticated: true },
+      { ...DEFAULT_UNIT, orderValueUsd: 60, photosTaken: 5 },
+      { ...DEFAULT_UNIT, fulfilmentRoute: 'DIRECT_TO_CUSTOMER' as const, photosTaken: 0 },
+      { ...DEFAULT_UNIT, returnWindowDays: 30 },
+    ]) {
+      for (const claim of positioningClaims(unit)) {
+        assert.equal(reviewCustomerCopy(claim).ok, true, claim);
+      }
     }
   });
 
   test('never mentions how many listings we screen', () => {
-    const block = positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true }).join(' ');
-    assert.ok(!/listings/i.test(block));
-    assert.ok(!/screened/i.test(block));
-    assert.ok(!/references/i.test(block));
-    assert.ok(!/sourced/i.test(block));
+    const block = positioningClaims({ ...DEFAULT_UNIT, thirdPartyAuthenticated: true }).join(' ');
+    for (const word of [/listings/i, /screened/i, /references/i, /sourced/i]) {
+      assert.ok(!word.test(block), `should not contain ${word}`);
+    }
   });
 
-  test('describes what we do TO the watch, not where it came from', () => {
-    const claims = positioningClaims(DEFAULT_OPERATION);
-    assert.ok(claims.some((c) => /Serial number recorded/.test(c)));
-    assert.ok(claims.some((c) => /photographs taken in hand/.test(c)));
-    assert.ok(claims.some((c) => /condition report/i.test(c)));
-    assert.ok(claims.some((c) => /verified market data/.test(c)));
+  test('claims no photography on a direct ship — we never touched it', () => {
+    const claims = positioningClaims({
+      ...DEFAULT_UNIT,
+      fulfilmentRoute: 'DIRECT_TO_CUSTOMER',
+      photosTaken: 0,
+      serialLogged: false,
+      intakeVideoRecorded: false,
+    });
+    assert.ok(!claims.some((c) => /photograph/i.test(c)));
+    assert.ok(!claims.some((c) => /Serial number recorded/.test(c)));
+    assert.ok(!claims.some((c) => /packing recorded/.test(c)));
   });
 
-  test('leads with authentication when there is one, drops it when there is not', () => {
-    const withAuth = positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true });
-    assert.ok(/third-party specialist/.test(withAuth[0]!));
-    const without = positioningClaims(DEFAULT_OPERATION);
-    assert.ok(!without.some((c) => /third-party specialist/.test(c)));
+  test('scales the claim down below the full-service threshold', () => {
+    const cheap = positioningClaims({
+      ...DEFAULT_UNIT,
+      orderValueUsd: 60,
+      photosTaken: 5,
+      intakeVideoRecorded: false,
+    });
+    assert.ok(cheap.some((c) => /5 images/.test(c)));
+    assert.ok(!cheap.some((c) => /controlled lighting/.test(c)));
+    assert.ok(!cheap.some((c) => /condition report/i.test(c)));
+  });
+
+  test('omits the returns line entirely when returns are not offered', () => {
+    const noReturns = positioningClaims({ ...DEFAULT_UNIT, returnWindowDays: null });
+    assert.ok(!noReturns.some((c) => /returns/i.test(c) && /no questions/i.test(c)));
+    // The trust burden moves to disclosure, so say that rather than leave a silence.
+    assert.ok(noReturns.some((c) => /described exactly as it is/.test(c)));
+
+    const withReturns = positioningClaims({ ...DEFAULT_UNIT, returnWindowDays: 30 });
+    assert.ok(withReturns.some((c) => /30-day returns/.test(c)));
+  });
+});
+
+describe('positioning strength warns about thin configurations', () => {
+  test('a direct-shipped order has almost nothing true to say', () => {
+    const s = positioningStrength({
+      ...DEFAULT_UNIT,
+      fulfilmentRoute: 'DIRECT_TO_CUSTOMER',
+      photosTaken: 0,
+      serialLogged: false,
+      intakeVideoRecorded: false,
+    });
+    assert.equal(s.thin, true);
+    assert.ok(s.warnings.some((w) => w.includes('direct ship')));
+  });
+
+  test('flags no-returns on a four-figure order', () => {
+    const s = positioningStrength({ ...DEFAULT_UNIT, orderValueUsd: 1500, returnWindowDays: null });
+    assert.ok(s.warnings.some((w) => w.includes('chargeback')));
+  });
+
+  test('does not flag no-returns on a cheap one', () => {
+    const s = positioningStrength({ ...DEFAULT_UNIT, orderValueUsd: 80, returnWindowDays: null });
+    assert.ok(!s.warnings.some((w) => w.includes('chargeback')));
+  });
+
+  test('a full-service in-hand order is not thin', () => {
+    assert.equal(positioningStrength({ ...DEFAULT_UNIT, thirdPartyAuthenticated: true }).thin, false);
   });
 });
 
