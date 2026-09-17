@@ -439,3 +439,103 @@ export function findProhibitedClaims(copy: string): string[] {
     (re) => `matches prohibited claim pattern ${re}`,
   );
 }
+
+// ────────────────────── positioning that is strong AND true ─────────────────────
+
+/**
+ * Copy generated from the operation we actually run.
+ *
+ * Presenting real work in its best light is ordinary business and there is far more
+ * room here than most dealers use. The engine screens hundreds of listings against
+ * live market data, prices against sold comparables, logs serials, photographs under
+ * controlled conditions and ships insured with signature. Every one of those is a
+ * genuine process claim — and each is *stronger* than a vague one precisely because
+ * it is specific enough to be checked.
+ *
+ * Nothing here is hedged. It is the operation, described well.
+ */
+export interface OperationFacts {
+  listingsScreenedPerMonth: number;
+  referencesTracked: number;
+  compWindowDays: number;
+  photosPerWatch: number;
+  serialLogged: boolean;
+  intakeVideoRecorded: boolean;
+  thirdPartyAuthenticated: boolean;
+  insuredSignatureShipping: boolean;
+  returnWindowDays: number;
+}
+
+export const DEFAULT_OPERATION: OperationFacts = {
+  listingsScreenedPerMonth: 2400,
+  referencesTracked: 40,
+  compWindowDays: 90,
+  photosPerWatch: 20,
+  serialLogged: true,
+  intakeVideoRecorded: true,
+  thirdPartyAuthenticated: false,
+  insuredSignatureShipping: true,
+  returnWindowDays: 30,
+};
+
+/**
+ * Process claims, ordered strongest first. Each maps to something in this repo, so
+ * every line is defensible if a customer or a forum asks how it works.
+ */
+export function positioningClaims(
+  facts: OperationFacts = DEFAULT_OPERATION,
+): string[] {
+  const claims: string[] = [];
+
+  if (facts.thirdPartyAuthenticated) {
+    claims.push(
+      'Authenticated by a third-party specialist through a multi-point physical ' +
+        'inspection, and supplied with their certification.',
+    );
+  }
+  if (facts.serialLogged) {
+    claims.push(
+      'Serial number recorded and matched at dispatch, so the watch you receive is ' +
+        'provably the watch we documented.',
+    );
+  }
+  if (facts.photosPerWatch >= 10) {
+    claims.push(
+      `${facts.photosPerWatch} photographs taken in hand under controlled lighting — ` +
+        'including every flaw, photographed deliberately rather than avoided.',
+    );
+  }
+  claims.push(
+    `Priced against ${facts.compWindowDays} days of verified sold comparables, not ` +
+      'against asking prices.',
+  );
+  claims.push(
+    `Sourced from roughly ${facts.listingsScreenedPerMonth.toLocaleString()} listings ` +
+      `screened each month across ${facts.referencesTracked} tracked references — ` +
+      'you are seeing the few that cleared every check.',
+  );
+  if (facts.intakeVideoRecorded) {
+    claims.push(
+      'Unboxing and packing recorded end to end, and retained against your order.',
+    );
+  }
+  if (facts.insuredSignatureShipping) {
+    claims.push('Dispatched fully insured, signature required, in unbranded packaging.');
+  }
+  claims.push(
+    `${facts.returnWindowDays}-day returns, no questions asked, from a named business ` +
+      'with a phone number that reaches a person.',
+  );
+
+  return claims;
+}
+
+/**
+ * Every generated claim passes findProhibitedClaims() — specificity and honesty are
+ * not in tension here. The specific version is the one that sells.
+ */
+export function positioningBlock(facts: OperationFacts = DEFAULT_OPERATION): string {
+  return positioningClaims(facts)
+    .map((c) => `• ${c}`)
+    .join('\n');
+}

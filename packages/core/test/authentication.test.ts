@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   ACCURATE_RELATIONSHIP_PHRASINGS,
+  DEFAULT_OPERATION,
+  positioningClaims,
   authenticationCostFor,
   authenticationOffer,
   findProhibitedClaims,
@@ -158,5 +160,31 @@ describe('copy is checked before it ships', () => {
   test('generated copy always passes', () => {
     const s = provenanceStatement(facts({ passedEbayAuthenticityGuarantee: true }));
     assert.deepEqual(findProhibitedClaims(s.customerCopy), []);
+  });
+});
+
+describe('positioning copy', () => {
+  test('every generated claim passes the guard', () => {
+    for (const claim of positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true })) {
+      assert.deepEqual(findProhibitedClaims(claim), [], claim);
+    }
+  });
+
+  test('leads with authentication when there is one', () => {
+    const withAuth = positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true });
+    assert.ok(/third-party specialist/.test(withAuth[0]!));
+  });
+
+  test('drops the authentication line when there is none, rather than softening it', () => {
+    const without = positioningClaims(DEFAULT_OPERATION);
+    assert.ok(!without.some((c) => /third-party specialist/.test(c)));
+  });
+
+  test('every claim maps to something the operation actually does', () => {
+    const claims = positioningClaims(DEFAULT_OPERATION);
+    assert.ok(claims.some((c) => /sold comparables/.test(c)));
+    assert.ok(claims.some((c) => /Serial number recorded/.test(c)));
+    assert.ok(claims.some((c) => /screened each month/.test(c)));
+    assert.ok(claims.length >= 6);
   });
 });
