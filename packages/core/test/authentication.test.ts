@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   ACCURATE_RELATIONSHIP_PHRASINGS,
   DEFAULT_OPERATION,
+  findSourcingDisclosures,
   positioningClaims,
+  reviewCustomerCopy,
   authenticationCostFor,
   authenticationOffer,
   findProhibitedClaims,
@@ -164,27 +166,76 @@ describe('copy is checked before it ships', () => {
 });
 
 describe('positioning copy', () => {
-  test('every generated claim passes the guard', () => {
+  test('every generated claim passes both guards', () => {
     for (const claim of positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true })) {
-      assert.deepEqual(findProhibitedClaims(claim), [], claim);
+      const r = reviewCustomerCopy(claim);
+      assert.equal(r.ok, true, `${claim} -> ${JSON.stringify(r)}`);
     }
   });
 
-  test('leads with authentication when there is one', () => {
-    const withAuth = positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true });
-    assert.ok(/third-party specialist/.test(withAuth[0]!));
+  test('never mentions how many listings we screen', () => {
+    const block = positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true }).join(' ');
+    assert.ok(!/listings/i.test(block));
+    assert.ok(!/screened/i.test(block));
+    assert.ok(!/references/i.test(block));
+    assert.ok(!/sourced/i.test(block));
   });
 
-  test('drops the authentication line when there is none, rather than softening it', () => {
+  test('describes what we do TO the watch, not where it came from', () => {
+    const claims = positioningClaims(DEFAULT_OPERATION);
+    assert.ok(claims.some((c) => /Serial number recorded/.test(c)));
+    assert.ok(claims.some((c) => /photographs taken in hand/.test(c)));
+    assert.ok(claims.some((c) => /condition report/i.test(c)));
+    assert.ok(claims.some((c) => /verified market data/.test(c)));
+  });
+
+  test('leads with authentication when there is one, drops it when there is not', () => {
+    const withAuth = positioningClaims({ ...DEFAULT_OPERATION, thirdPartyAuthenticated: true });
+    assert.ok(/third-party specialist/.test(withAuth[0]!));
     const without = positioningClaims(DEFAULT_OPERATION);
     assert.ok(!without.some((c) => /third-party specialist/.test(c)));
   });
+});
 
-  test('every claim maps to something the operation actually does', () => {
-    const claims = positioningClaims(DEFAULT_OPERATION);
-    assert.ok(claims.some((c) => /sold comparables/.test(c)));
-    assert.ok(claims.some((c) => /Serial number recorded/.test(c)));
-    assert.ok(claims.some((c) => /screened each month/.test(c)));
-    assert.ok(claims.length >= 6);
+describe('the sourcing-disclosure guard', () => {
+  test('flags copy that explains the business model', () => {
+    for (const copy of [
+      'Sourced from roughly 2,400 listings screened each month across 40 tracked references',
+      'We source our watches from marketplace listings',
+      'Every watch is bought on eBay and inspected before resale',
+      'A retail arbitrage operation',
+      'We scan 2400 listings a day',
+      'We find them across the major marketplaces',
+      'Drop-shipped direct from the supplier',
+    ]) {
+      assert.ok(findSourcingDisclosures(copy).length > 0, `should flag: ${copy}`);
+    }
+  });
+
+  test('does NOT flag citing eBay authentication — that is a trust asset', () => {
+    for (const copy of [
+      "This watch was authenticated through eBay's Authenticity Guarantee programme by their third-party authenticator.",
+      "We purchase professional third-party authentication through eBay's Authenticity Guarantee service.",
+    ]) {
+      assert.deepEqual(findSourcingDisclosures(copy), [], `should pass: ${copy}`);
+    }
+  });
+
+  test('reviewCustomerCopy separates untrue claims from ones that should stay internal', () => {
+    const r = reviewCustomerCopy(
+      'As an eBay-approved dealer we source from listings screened daily.',
+    );
+    assert.equal(r.ok, false);
+    assert.ok(r.untrueClaims.length > 0);
+    assert.ok(r.sourcingDisclosures.length > 0);
+  });
+
+  test('passes clean copy', () => {
+    assert.equal(
+      reviewCustomerCopy(
+        'Serial number recorded and matched at dispatch. 30-day returns, no questions asked.',
+      ).ok,
+      true,
+    );
   });
 });

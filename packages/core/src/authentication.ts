@@ -443,20 +443,19 @@ export function findProhibitedClaims(copy: string): string[] {
 // ────────────────────── positioning that is strong AND true ─────────────────────
 
 /**
- * Copy generated from the operation we actually run.
+ * Customer-facing process copy, generated from what the operation actually does.
  *
- * Presenting real work in its best light is ordinary business and there is far more
- * room here than most dealers use. The engine screens hundreds of listings against
- * live market data, prices against sold comparables, logs serials, photographs under
- * controlled conditions and ships insured with signature. Every one of those is a
- * genuine process claim — and each is *stronger* than a vague one precisely because
- * it is specific enough to be checked.
+ * ── The rule: describe what we do TO the watch, never where it came from ────────
+ * An earlier version of this listed "sourced from roughly 2,400 listings screened
+ * each month across 40 tracked references". That is true, and it is exactly the
+ * sentence no retailer writes, because it explains the business model to the
+ * customer. Nobody advertises their acquisition funnel.
  *
- * Nothing here is hedged. It is the operation, described well.
+ * Everything below is about inspection, documentation, pricing discipline, packaging
+ * and service — the things a serious dealer talks about. The sourcing engine stays
+ * internal where it belongs.
  */
 export interface OperationFacts {
-  listingsScreenedPerMonth: number;
-  referencesTracked: number;
   compWindowDays: number;
   photosPerWatch: number;
   serialLogged: boolean;
@@ -464,11 +463,10 @@ export interface OperationFacts {
   thirdPartyAuthenticated: boolean;
   insuredSignatureShipping: boolean;
   returnWindowDays: number;
+  conditionReportIncluded: boolean;
 }
 
 export const DEFAULT_OPERATION: OperationFacts = {
-  listingsScreenedPerMonth: 2400,
-  referencesTracked: 40,
   compWindowDays: 90,
   photosPerWatch: 20,
   serialLogged: true,
@@ -476,12 +474,10 @@ export const DEFAULT_OPERATION: OperationFacts = {
   thirdPartyAuthenticated: false,
   insuredSignatureShipping: true,
   returnWindowDays: 30,
+  conditionReportIncluded: true,
 };
 
-/**
- * Process claims, ordered strongest first. Each maps to something in this repo, so
- * every line is defensible if a customer or a forum asks how it works.
- */
+/** Process claims, strongest first. Each maps to something we genuinely do. */
 export function positioningClaims(
   facts: OperationFacts = DEFAULT_OPERATION,
 ): string[] {
@@ -505,14 +501,15 @@ export function positioningClaims(
         'including every flaw, photographed deliberately rather than avoided.',
     );
   }
+  if (facts.conditionReportIncluded) {
+    claims.push(
+      'A written condition report covering dial, case, bracelet, crystal and ' +
+        'timekeeping, assessed to the same standard on every watch.',
+    );
+  }
   claims.push(
-    `Priced against ${facts.compWindowDays} days of verified sold comparables, not ` +
-      'against asking prices.',
-  );
-  claims.push(
-    `Sourced from roughly ${facts.listingsScreenedPerMonth.toLocaleString()} listings ` +
-      `screened each month across ${facts.referencesTracked} tracked references — ` +
-      'you are seeing the few that cleared every check.',
+    `Priced against ${facts.compWindowDays} days of verified market data, so the ` +
+      'number in front of you is defensible.',
   );
   if (facts.intakeVideoRecorded) {
     claims.push(
@@ -530,12 +527,60 @@ export function positioningClaims(
   return claims;
 }
 
-/**
- * Every generated claim passes findProhibitedClaims() — specificity and honesty are
- * not in tension here. The specific version is the one that sells.
- */
 export function positioningBlock(facts: OperationFacts = DEFAULT_OPERATION): string {
   return positioningClaims(facts)
     .map((c) => `• ${c}`)
     .join('\n');
+}
+
+/**
+ * Copy that explains the business model to the customer.
+ *
+ * Distinct from findProhibitedClaims(): nothing here is dishonest, it is simply
+ * commercially foolish. Describing the acquisition funnel invites the obvious
+ * question — "so why don't I just buy it there?" — and no retailer answers it
+ * voluntarily.
+ *
+ * Note that "eBay" alone is NOT flagged: citing eBay's Authenticity Guarantee is a
+ * genuine trust asset. What gets flagged is language about ACQUISITION.
+ */
+const SOURCING_DISCLOSURE_PATTERNS: readonly RegExp[] = [
+  /\barbitrage\b/i,
+  /\bwe\s+(?:source|buy|purchase|acquire|find|scan|search)\s+(?:them|these|it|our|from|across)\b/i,
+  /\bsourced\s+from\b/i,
+  /\blistings?\s+(?:screened|scanned|reviewed|monitored)\b/i,
+  /\b(?:screened?|scan(?:ned)?|monitor(?:ed)?)\s+[\d,]+\s+listings?\b/i,
+  /\bmarketplace\s+listings?\b/i,
+  /\bbought\s+(?:on|from)\s+(?:ebay|chrono24|another\s+(?:site|marketplace))\b/i,
+  /\bresell(?:er|ing)?\b/i,
+  /\bdrop[-\s]?ship/i,
+  /\btracked\s+references\b/i,
+];
+
+/**
+ * Check copy for anything that explains where the watch came from.
+ *
+ * Run this alongside findProhibitedClaims() in the listing generator. One catches
+ * claims that are untrue; this one catches claims that are true and should stay
+ * internal.
+ */
+export function findSourcingDisclosures(copy: string): string[] {
+  return SOURCING_DISCLOSURE_PATTERNS.filter((re) => re.test(copy)).map(
+    (re) => `reveals the acquisition model: ${re}`,
+  );
+}
+
+/** Both guards in one call, for the listing generator. */
+export function reviewCustomerCopy(copy: string): {
+  ok: boolean;
+  untrueClaims: string[];
+  sourcingDisclosures: string[];
+} {
+  const untrueClaims = findProhibitedClaims(copy);
+  const sourcingDisclosures = findSourcingDisclosures(copy);
+  return {
+    ok: untrueClaims.length === 0 && sourcingDisclosures.length === 0,
+    untrueClaims,
+    sourcingDisclosures,
+  };
 }
