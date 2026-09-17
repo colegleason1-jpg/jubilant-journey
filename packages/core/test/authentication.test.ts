@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  ACCURATE_RELATIONSHIP_PHRASINGS,
   authenticationCostFor,
   authenticationOffer,
   findProhibitedClaims,
@@ -100,14 +101,14 @@ describe('claims are generated from facts, not chosen', () => {
     assert.ok(/WatchCSA/.test(real.customerCopy));
   });
 
-  test('affiliation with eBay staff is prohibited under every combination of facts', () => {
+  test('claiming an eBay dealer STATUS is prohibited under every combination of facts', () => {
     for (const ebay of [true, false]) {
       for (const indie of [true, false]) {
         const s = provenanceStatement(
           facts({ passedEbayAuthenticityGuarantee: ebay, independentlyAuthenticated: indie }),
         );
         assert.ok(
-          s.mustNotClaim.some((c) => c.includes('no such relationship exists')),
+          s.mustNotClaim.some((c) => c.includes('customer of the service')),
           `ebay=${ebay} independent=${indie}`,
         );
       }
@@ -121,26 +122,41 @@ describe('claims are generated from facts, not chosen', () => {
 });
 
 describe('copy is checked before it ships', () => {
-  test('catches the affiliation claim in any phrasing', () => {
+  test('flags claims of a STATUS we do not hold', () => {
     for (const copy of [
-      'We work with eBay authentication staff',
-      'We work with eBay to verify every watch',
       'Authenticated in partnership with eBay',
       'As an eBay-approved dealer we verify each piece',
+      'An eBay authorised reseller',
+      'Authorized by eBay',
+      'Official eBay partner',
       'Checked by our in-house authenticators',
+      'We authenticate every watch ourselves',
     ]) {
       assert.ok(findProhibitedClaims(copy).length > 0, `should flag: ${copy}`);
     }
   });
 
-  test('passes accurate copy', () => {
+  test('does NOT flag accurate descriptions of buying the service', () => {
+    // Electing the add-on IS purchasing eBay's authentication service. Saying so is
+    // accurate and should be easy to say.
+    for (const copy of [
+      "We purchase professional third-party authentication through eBay's Authenticity Guarantee service.",
+      "This watch was authenticated through eBay's Authenticity Guarantee programme by their third-party authenticator.",
+      "We use eBay's Authenticity Guarantee on every watch over $2,000.",
+      'We pay for independent authentication whenever a customer requests it.',
+    ]) {
+      assert.deepEqual(findProhibitedClaims(copy), [], `should pass: ${copy}`);
+    }
+  });
+
+  test('every suggested phrasing passes its own guard', () => {
+    for (const copy of ACCURATE_RELATIONSHIP_PHRASINGS) {
+      assert.deepEqual(findProhibitedClaims(copy), [], copy);
+    }
+  });
+
+  test('generated copy always passes', () => {
     const s = provenanceStatement(facts({ passedEbayAuthenticityGuarantee: true }));
     assert.deepEqual(findProhibitedClaims(s.customerCopy), []);
-    assert.deepEqual(
-      findProhibitedClaims(
-        "Verified through eBay's Authenticity Guarantee programme by their third-party authenticator.",
-      ),
-      [],
-    );
   });
 });

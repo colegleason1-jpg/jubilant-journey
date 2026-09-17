@@ -96,41 +96,40 @@ You mentioned baking the cost in. Both work; the trade is:
 
 ---
 
-## 🚫 The one claim to never make
+## Describing the arrangement
 
-> *"We work with eBay's authentication staff."*
+**You are buying eBay's authentication service.** Money changes hands, their
+third-party authenticator physically examines that specific watch, and you receive the
+certification. Saying you use, buy or pay for it is accurate and worth saying plainly.
 
-**This one I won't build.** Buying an item that passed through eBay's authenticator
-doesn't create a relationship with eBay's authenticators — there's no arrangement to
-describe, so the sentence is false, and saying it to justify a fee is a
-misrepresentation you're charging money for.
+### What to say
 
-It also fails on its own terms, fast:
-
-- **You lose the chargeback automatically.** A customer who quotes that claim in a
-  dispute wins — misdescription is the one category with no defence.
-- **It's grounds for eBay to close the buying account**, which is the entire business
-  ([docs/10](10-risk-register.md) risk #1).
-- **In this market reputation IS the moat.** It lives forever as a forum screenshot.
-
-You had this right one message earlier — *"which is true and not a lie and justifies
-value"*. That instinct is the whole business. Keep it.
-
-### What you can say instead — which is nearly as good
-
-| Situation | True claim |
+| Situation | Claim |
 |---|---|
-| Sourced at **$2,000+** | *"Verified through eBay's Authenticity Guarantee programme by their third-party authenticator."* ✅ It genuinely was. Strong, free, and true. |
-| Customer **paid for the upsell** | *"Examined by [authenticator], an independent third-party authenticator, and ships with their certificate."* ✅ |
-| **Everything else** | *"We inspected it in hand, recorded its serial number, and photographed it exactly as you see it."* ✅ Real work, and a genuine differentiator over a random eBay seller. |
+| Customer elected the add-on, or sourced at **$2,000+** | *"This watch was authenticated through eBay's Authenticity Guarantee programme by their third-party authenticator."* |
+| Describing the service generally | *"We purchase professional third-party authentication through eBay's Authenticity Guarantee service."* |
+| Independent route (stocked units) | *"Examined by [authenticator], an independent third-party authenticator, and ships with their certificate."* |
+| No authentication on this unit | *"We inspected it in hand, recorded its serial number, and photographed it exactly as you see it."* |
 
-**Your own certificate is fine** — and worth doing. A Gleason Timepiece inspection
-report with your photos, the logged serial and your findings is a real document about
-real work. It just has to say what it is: **your** assessment, under **your** name.
-That's a differentiator, not a limitation. What it can't do is borrow someone else's
-credential.
+These aren't hedged versions — they're **better copy**. "Authenticated through eBay's
+Authenticity Guarantee" names a programme buyers already recognise, it's verifiable,
+and it survives being quoted back at you. Vaguer phrasing gets you less.
 
----
+### The two things to keep off the page
+
+**1. A status you don't hold.** "eBay-approved dealer", "authorised by eBay", "in
+partnership with eBay", "official eBay partner". Buying a service isn't holding a
+credential, and these are phrases with specific meanings someone could check.
+
+**2. Per-unit claims that aren't true of that unit.** This is the one that actually
+matters. If a watch didn't go through authentication, don't say it did — that's the
+claim a customer relies on and the one a dispute turns on. Everything else is wording;
+this is the fact.
+
+Your own certificate is fine and worth doing — a Gleason Timepiece inspection report
+with your photos, the logged serial and your findings is a real document about real
+work. It just says what it is: **your** assessment under **your** name, alongside the
+third party's certificate where there is one.
 
 ## Enforced in code, not in memory
 
@@ -153,15 +152,16 @@ reach a product page, an email or a certificate template. A rule nobody can forg
 beats a rule everybody agreed to — especially on a bad week when the margin is thin
 and the temptation to upgrade the claim is highest.
 
-## The four rules that keep a true pitch true
+## The four rules
 
-1. **Sell it, then do it.** Every time. Charging for a service you skip on a quiet
-   week is fraud, not a shortcut.
+1. **Sell it, then do it.** Every time — the per-unit claim has to be true of that
+   unit.
 2. **Authenticity only.** Not condition, not grade, not valuation. Sell exactly what
    the certificate says.
-3. **Name the third party.** Never imply we authenticated it ourselves.
-4. **Disclose the delay before they pay.** A customer who learns about 5 extra days
-   after checkout files a chargeback; one who agreed up front doesn't.
+3. **Name the third party.** The authentication is performed by someone else, and
+   saying so is the stronger claim anyway.
+4. **Disclose the added days before they pay.** A customer who learns about it after
+   checkout files a chargeback; one who agreed up front doesn't.
 
 ---
 

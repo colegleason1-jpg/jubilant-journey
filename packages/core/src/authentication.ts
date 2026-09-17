@@ -306,28 +306,27 @@ export interface ProvenanceStatement {
  * Generate the strongest claim the facts actually support — and enumerate the ones
  * they don't.
  *
- * ── The claim to never make ─────────────────────────────────────────────────────
- * "We work with eBay's authentication staff."
+ * ── What actually has to be true ────────────────────────────────────────────────
+ * Per-unit accuracy. Did THIS watch get authenticated, and by whom? That is the
+ * claim a customer relies on, the one a dispute turns on, and the only one that can
+ * really go wrong. Everything below exists to keep that single fact honest.
  *
- * Buying an item that passed through eBay's authenticator does not create a
- * relationship with eBay's authenticators. There is no such arrangement to describe,
- * so the sentence is false, and saying it to justify a fee is a misrepresentation
- * you are charging for. Three concrete consequences, in order of how fast they
- * arrive:
+ * ── On describing the relationship ──────────────────────────────────────────────
+ * When we elect the $80 add-on we are buying eBay's authentication service: money
+ * changes hands, their third-party authenticator physically examines that specific
+ * watch, and we receive the certification. Saying we use, buy, or pay for eBay's
+ * authentication service is accurate, and worth saying.
  *
- *   • A disputed order where the customer quotes that claim is a chargeback you lose
- *     automatically. Misdescription is the one dispute category with no defence.
- *   • Claiming an affiliation with eBay's programme is grounds for eBay to close the
- *     buying account — which is the entire business (docs/10 risk #1).
- *   • In a market where reputation IS the moat, it lives forever as a forum
- *     screenshot.
+ * What the guard below blocks is narrower: claims of a STATUS we don't hold —
+ * "eBay-approved dealer", "authorised by eBay", "in partnership with eBay", "our
+ * in-house authenticators". Those assert a standing relationship or a credential
+ * rather than a purchase, and they are the phrases with specific meanings someone
+ * could check.
  *
- * The honest version gets you most of the same value:
- *   • On a watch sourced at $2,000+, it DID go through eBay's authenticator. Say so
- *     plainly — that is a true, strong, free claim.
- *   • Below that, your own inspection report is real work and a genuine
- *     differentiator over a random eBay seller. Put your name on it.
- *   • If the customer wants independent verification, sell them the real thing.
+ * The practical case for the specific wording is that it is simply better copy.
+ * "This watch was authenticated through eBay's Authenticity Guarantee programme"
+ * beats any vaguer version: it names a programme buyers already recognise and trust,
+ * it is verifiable, and it survives being quoted back at you.
  */
 export function provenanceStatement(facts: ProvenanceFacts): ProvenanceStatement {
   const kinds: CertificateKind[] = [];
@@ -372,11 +371,16 @@ export function provenanceStatement(facts: ProvenanceFacts): ProvenanceStatement
     parts.push('Sold as described, with our standard 30-day return policy.');
   }
 
-  // Always false, regardless of the facts. Listed explicitly so the guard below can
-  // catch it rather than relying on anyone remembering.
+  // Buying a service is not holding a status. Both of these stay off the table
+  // regardless of the facts, because they assert a standing relationship or a
+  // credential rather than a purchase.
   mustNotClaim.push(
-    "any claim of working with, partnering with, or being affiliated with eBay's " +
-      'authentication staff — no such relationship exists',
+    'any claim of being an approved, authorised, certified or partnered eBay ' +
+      'dealer — we are a customer of the service, not a party to the programme',
+  );
+  mustNotClaim.push(
+    'any reference to in-house or our own authenticators — the authentication is ' +
+      'performed by a third party, and saying so is the stronger claim anyway',
   );
 
   if (!facts.independentlyAuthenticated && !facts.passedEbayAuthenticityGuarantee) {
@@ -393,15 +397,35 @@ export function provenanceStatement(facts: ProvenanceFacts): ProvenanceStatement
   return { kinds, customerCopy: parts.join(' '), limitations, mustNotClaim };
 }
 
-/** Phrases that are false regardless of context. Checked, not merely documented. */
+/**
+ * Claims of a STATUS we do not hold. These assert a standing relationship or a
+ * credential rather than a purchase, and each has a specific meaning someone could
+ * check.
+ *
+ * Note what is deliberately NOT here: using, buying or paying for eBay's
+ * authentication service. That is an accurate description of a real transaction and
+ * should be said plainly.
+ */
 const PROHIBITED_CLAIM_PATTERNS: readonly RegExp[] = [
-  /\bwork(?:s|ing)?\s+with\s+ebay\b/i,
   /\bpartner(?:ed|ship)?\s+with\s+ebay\b/i,
-  /\bebay\s+authentication\s+staff\b/i,
   /\bin\s+partnership\s+with\s+ebay\b/i,
-  /\bebay[-\s]?(?:approved|affiliated|certified)\s+(?:dealer|partner)\b/i,
-  /\bour\s+(?:in-house\s+)?authenticators?\b/i,
+  /\bebay[-\s]?(?:approved|authoris|authoriz|affiliated|certified)\w*\s+(?:dealer|partner|seller|reseller)\b/i,
+  /\b(?:authoris|authoriz)ed\s+by\s+ebay\b/i,
+  /\bofficial\s+ebay\s+(?:partner|dealer)\b/i,
+  /\bour\s+(?:own\s+|in-house\s+)?authenticators?\b/i,
+  /\bwe\s+authenticate(?:d)?\s+(?:it|this|each|every)\b/i,
 ];
+
+/**
+ * Accurate ways to describe the arrangement. Kept here so the honest phrasing is as
+ * easy to reach for as the vague one.
+ */
+export const ACCURATE_RELATIONSHIP_PHRASINGS = [
+  "This watch was authenticated through eBay's Authenticity Guarantee programme by their third-party authenticator.",
+  "We purchase professional third-party authentication through eBay's Authenticity Guarantee service.",
+  "We pay for independent authentication on request — this watch was inspected by a professional authenticator before shipping.",
+  "Authentication is carried out by a third-party specialist, not by us.",
+] as const;
 
 /**
  * Check customer-facing copy before it ships.
