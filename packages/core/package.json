@@ -1,0 +1,18 @@
+{
+  "name": "@gleason/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Comp, pricing, deal-gating, risk and order-flow engine for Gleason Timepiece",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.ts\"",
+    "test:watch": "node --test --watch \"test/*.test.ts\""
+  }
+}

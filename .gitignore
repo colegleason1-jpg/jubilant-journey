@@ -1,0 +1,16 @@
+node_modules/
+.next/
+.vercel/
+dist/
+build/
+.DS_Store
+*.log
+
+# Secrets — eBay/Stripe/WatchCharts keys never belong in git
+.env
+.env.*
+!.env.example
+
+# Local scratch
+/tmp/
+*.local
