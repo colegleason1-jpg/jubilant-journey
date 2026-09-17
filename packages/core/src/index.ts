@@ -3,6 +3,7 @@ export * from './tiers.ts';
 export * from './economics.ts';
 export * from './authentication.ts';
 export * from './photos.ts';
+export * from './platforms.ts';
 export * from './comps.ts';
 export * from './deal.ts';
 export * from './offers.ts';
