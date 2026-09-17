@@ -56,7 +56,18 @@ Two-hop through you isn't just quality control — it's the physical fact that m
 
 ## Recommendation: build it
 
-**Next.js 15 (App Router) + Stripe + Supabase Postgres, on Vercel.**
+> ### ⚠️ Correction: not on Vercel
+>
+> An earlier draft of this document recommended Vercel's Hobby plan. **That was
+> wrong.** Vercel Hobby is non-commercial only, and their definition explicitly
+> covers e-commerce storefronts, processing payments and affiliate linking. A watch
+> store is commercial on three counts, and the fix is Vercel Pro at $20/month.
+>
+> **Host on Cloudflare Pages + Workers instead** — no commercial-use restriction,
+> 100k function requests/day, unlimited bandwidth, free SSL and custom domains. Full
+> reasoning and the rest of the free stack in [docs/11](11-free-tier-architecture.md).
+
+**Next.js 15 (App Router) + Stripe + Supabase Postgres, on Cloudflare Pages.**
 
 Not because building is fun, but because our three hard requirements — instant delist,
 authorize-and-capture with programmatic void, and machine-generated 1-of-1 products —
@@ -71,16 +82,18 @@ is the hard part and it's platform-independent anyway.
 
 | Layer | Choice | Why | Cost |
 |---|---|---|---|
-| Frontend + API | **Next.js 15 on Vercel** | SSR for SEO (critical — see [docs/07](07-marketing-and-demand.md)), API routes, ISR for product pages | $0 → $20/mo |
+| Frontend + API | **Next.js 15 on Cloudflare Pages** (via `@opennextjs/cloudflare`) | SSR for SEO (critical — see [docs/07](07-marketing-and-demand.md)), API routes. Commercial use permitted on the free plan | **$0** |
 | Database | **Supabase Postgres** | Managed Postgres, row-level security, realtime, storage for photos, generous free tier | $0 → $25/mo |
 | Payments | **Stripe** | Only processor with clean programmatic manual capture + Radar + Identity in one place | 2.9% + 30¢ |
 | Images | **Supabase Storage + Next/Image** | Watch photography is the product. Needs to be fast and sharp | included |
-| Jobs | **Vercel Cron → API routes** (→ Railway worker if runtimes get long) | J1–J4 from docs/04 | $0 |
+| Jobs | **GitHub Actions cron → `services/scout`** | J1–J4 from docs/04. Budget maths in [docs/11](11-free-tier-architecture.md) | $0 |
 | Email | **Resend** | Transactional + the eventual list | $0 → $20/mo |
 | Analytics | **Plausible** or Vercel Analytics | Lightweight, no cookie banner | $0 → $9/mo |
 | Alerts to you | **Telegram Bot API** | Free, instant, phone push, trivially scriptable | $0 |
 
-**Total: $0/mo to start, ~$75–115/mo fully loaded including WatchCharts.**
+**Total: $0/mo to start (bar the ~$12/yr domain), ~$55–95/mo fully loaded including
+WatchCharts.** See [docs/11](11-free-tier-architecture.md) for the full free-tier
+budget and the six gotchas that break it.
 
 ### When to reconsider
 

@@ -1,0 +1,69 @@
+# Scheduled deal scan. See docs/11 for the free-tier budget maths.
+#
+# BILLING: GitHub Actions rounds every job UP to a whole minute. A 61-second run
+# costs exactly double a 59-second one. At this cadence we use ~1,020 of the 2,000
+# free private-repo minutes per month, which only holds while each run stays under
+# 60 seconds. SCOUT_DEADLINE_SECONDS enforces that from inside the script.
+#
+# CRON RELIABILITY: GitHub does not guarantee schedule punctuality — 5-30 minute
+# delays are routine and runs are occasionally skipped under load. That is fine for
+# discovery. It is NOT good enough to protect money, which is why capture only
+# happens after a real-time availability check at checkout (docs/06), not because a
+# sweep happened to run.
+
+name: scout
+
+on:
+  schedule:
+    # Every 30 minutes, 07:00-23:30 US Eastern (UTC-4 in summer).
+    # Cron has no DST awareness; in winter this shifts an hour earlier. Harmless.
+    - cron: "0,30 11-23,0-3 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Scan and print, but write nothing and send no email"
+        type: boolean
+        default: false
+
+concurrency:
+  # A delayed run must never overlap the next one and double-spend the budget.
+  group: scout
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    # Hard ceiling. If a run ever hangs, it costs 2 minutes, not 360.
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          # No `pip install` step: the scout's hot path is stdlib-only by design.
+
+      - name: Scan
+        working-directory: services/scout
+        env:
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
+          EBAY_MARKETPLACE_ID: EBAY_US
+          EBAY_EPN_CAMPAIGN_ID: ${{ secrets.EBAY_EPN_CAMPAIGN_ID }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_FROM_EMAIL: ${{ vars.ALERT_FROM_EMAIL }}
+          ALERT_TO_EMAIL: ${{ secrets.ALERT_TO_EMAIL }}
+          HAS_RESALE_CERTIFICATE: ${{ vars.HAS_RESALE_CERTIFICATE }}
+          HOME_STATE_SALES_TAX_RATE: ${{ vars.HOME_STATE_SALES_TAX_RATE }}
+          MIN_MARGIN_PCT: ${{ vars.MIN_MARGIN_PCT }}
+          MIN_DISCOUNT_TO_MARKET_PCT: ${{ vars.MIN_DISCOUNT_TO_MARKET_PCT }}
+          TARGET_DISCOUNT_TO_MARKET: ${{ vars.TARGET_DISCOUNT_TO_MARKET }}
+          SCOUT_DEADLINE_SECONDS: "45"
+          SCOUT_DRY_RUN: ${{ inputs.dry_run }}
+        run: python -m scout.main

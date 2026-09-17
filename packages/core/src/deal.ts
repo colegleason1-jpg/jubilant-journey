@@ -15,10 +15,13 @@ import {
   discountToMarket,
   DEFAULT_PRICING,
   maxViableSourcePrice,
+  meetsFloors,
+  minMarginPctFor,
   projectMargin,
   solveListPrice,
   type PricingConfig,
 } from './pricing.ts';
+import { tierFor } from './tiers.ts';
 import type {
   Candidate,
   DealEvaluation,
@@ -140,8 +143,13 @@ export function evaluateDeal(
   }
 
   // ── Gate: does the money actually work? ───────────────────────────────────────
-  if (projection.marginPct < config.pricing.minMarginPct) {
+  // Both floors for the tier: the percentage (protects cheap units from not being
+  // worth the handling) and the absolute dollars (protects expensive ones from a
+  // flattering-looking percentage). See tiers.ts.
+  const floors = meetsFloors(projection, config.pricing);
+  if (!floors.ok) {
     gatesFailed.push('MARGIN');
+    warnings.push(`margin floors failed: ${floors.failures.join(', ')}`);
   }
 
   // ── Gate: seller quality ──────────────────────────────────────────────────────
@@ -199,7 +207,16 @@ export function evaluateDeal(
   return {
     candidateId: candidate.id,
     pass,
-    score: pass ? scoreDeal(projection.marginPct, discountPct, liquidity.score, comps.confidence, s) : 0,
+    score: pass
+      ? scoreDeal(
+          projection.marginPct,
+          minMarginPctFor(tierFor(listPriceUsd), config.pricing),
+          discountPct,
+          liquidity.score,
+          comps.confidence,
+          s,
+        )
+      : 0,
     gatesFailed,
     warnings,
     comps,
@@ -216,12 +233,16 @@ export function evaluateDeal(
  */
 function scoreDeal(
   marginPct: number,
+  tierMinMarginPct: number,
   discountPct: number,
   liquidityScore: number,
   compConfidence: number,
   seller: Candidate['seller'],
 ): number {
-  const marginScore = clamp01(marginPct / 0.3);
+  // Score margin RELATIVE to the tier's floor. A 2% margin is excellent on a
+  // $15,000 watch and worthless on a $200 one; an absolute scale would rank every
+  // high-value deal last.
+  const marginScore = clamp01(marginPct / Math.max(tierMinMarginPct * 2.5, 0.02));
   const discountScore = clamp01(discountPct / 0.4);
   const sellerScore = clamp01(
     0.5 * clamp01(seller.feedbackScore / 500) +

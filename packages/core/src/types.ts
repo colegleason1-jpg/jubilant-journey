@@ -111,12 +111,25 @@ export interface LandedCost {
 
 export interface MarginProjection {
   listPriceUsd: number;
+  /** Postage collected on top of the list price. Non-zero only in cheap tiers. */
+  shippingCollectedUsd: number;
+  /** listPriceUsd + shippingCollectedUsd. Margin is measured against this. */
+  revenueUsd: number;
   landedCost: LandedCost;
   processingFeeUsd: number;
   /** eBay Partner Network commission earned on our own purchase. */
   epnCreditUsd: number;
   grossProfitUsd: number;
   marginPct: number;
+  /** Which rail this projection assumed. Decisive above ~$2,500. */
+  rail: 'CARD' | 'ACH' | 'WIRE';
+  /** Price tier this order falls in. See tiers.ts. */
+  tierLabel: string;
+  /**
+   * Gross profit per hour of handling. The real gate at the cheap end, where a
+   * healthy-looking percentage can still be a bad use of 30 minutes.
+   */
+  effectiveHourlyUsd: number;
 }
 
 export type GateName =

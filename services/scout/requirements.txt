@@ -1,0 +1,10 @@
+# The scout's hot path (eBay Browse API -> Supabase -> Resend) uses ONLY the Python
+# standard library, so the scheduled job skips `pip install` entirely and saves
+# 15-30 seconds of a 60-second budget. See docs/11.
+#
+# BeautifulSoup is needed only for scout/scrape.py, the optional adapter for sources
+# whose terms permit automated access. eBay is not one of them and the adapter
+# refuses it — see the denylist in scrape.py.
+#
+#   pip install -r requirements.txt   # only if you use the scrape adapter
+beautifulsoup4>=4.12

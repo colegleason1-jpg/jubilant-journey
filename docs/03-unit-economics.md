@@ -68,7 +68,9 @@ Same watch, sourced at **$720** (a 37% discount to median — these exist, rough
 | **Gross profit** | **$166.42** |
 | **Gross margin** | **16.1%** |
 
-**That's the target shape: ~$165 gross, ~16% margin, on a ~$1,000 order.**
+**That's the target shape for the CORE band: ~$165 gross, ~16% margin, on a ~$1,000
+order.** Other bands look completely different — see
+[docs/12](12-buy-box-and-offers.md) for the full curve from $30 to $40,000.
 
 The engine works this backwards for you. Given a market price of $1,150 it returns:
 
@@ -78,6 +80,12 @@ bidCeiling(1150) → { listPriceUsd: 1035, maxSourcePriceUsd: 762.86 }
 
 *"Market says $1,150. We list at $1,035. Do not pay more than $762 for it."* That one
 number is what the daily digest puts in front of you.
+
+> ⚠️ **$762 is 66% of market — but that ratio is specific to this price point.**
+> The required discount is fluid: ~50% on a $30 watch, ~66% here, ~90% on a $10,000
+> one. "Buy at 90% of market" loses money at $1,000 and is a perfectly good trade at
+> $10,000. The full table, and why the payment rail decides the top end, is in
+> [docs/12](12-buy-box-and-offers.md) — the most important page in this repo.
 
 ### The $2,000+ variant is better per unit
 

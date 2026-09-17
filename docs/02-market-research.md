@@ -28,12 +28,23 @@ Ranked by *exploitability for a solo operator*, not by glamour:
 
 | Tier | Examples | Spread | Verdict |
 |---|---|---|---|
-| **Sweet spot: $600–$2,500 enthusiast** | Seiko (Alpinist, SPB, Turtle), Hamilton, Tissot PRX/Gentleman, Longines Hydroconquest/Spirit, Oris Aquis/65, Christopher Ward, Certina, Sinn, Nomos entry, Tudor entry (used) | **12–25%** | **Target this.** Sloppy pricing, real demand, AG-eligible, survivable single-unit loss |
+| **Start here: $800–$2,500 enthusiast** | Seiko (Alpinist, SPB, Turtle), Hamilton, Tissot PRX/Gentleman, Longines Hydroconquest/Spirit, Oris Aquis/65, Christopher Ward, Certina, Sinn, Nomos entry, Tudor entry (used) | **12–25%** | **Target this.** Sloppy pricing, real demand, AG-eligible, survivable single-unit loss |
 | Mid-lux $2,500–$6,000 | Omega Seamaster/Speedmaster, Tudor BB58, Grand Seiko, Breitling | 6–12% | Phase 3. Free AG. Higher absolute margin, much higher single-unit risk |
-| High-lux $6,000+ | Rolex, AP, Patek | 2–5% | **Do not touch.** Competing with capitalized pros; one bad unit ends the business |
-| Micro / fashion <$500 | Invicta, Casio, no-name | 20%+ | **Do not touch.** No AG eligibility, absolute margins ~$40, chargeback-to-margin ratio is fatal |
+| High-lux $6,000+ | Rolex, AP, Patek | 2–5% | **Not year one** — but not never. 2% of $15,000 is $300, which is a fine trade *if* you settle by wire (card fees alone would be $435) and have the float. Revisit once you've done 50 clean orders |
+| Micro / fashion <$500 | Seiko 5, Casio, Orient, Timex | 25–35% | **Viable, and a good testbed.** A $30 watch bought at $14 nets ~$10 in 8 minutes (~$78/hour) with postage charged to the buyer. No authentication, but a dispute costs $30. Good for learning the pipeline with near-zero risk |
 
-### Why $600–$2,500 specifically
+> **There is no hard floor — the economics are fluid** (see
+> [docs/12](12-buy-box-and-offers.md)). Money can be made at $30 and at $18,000; what
+> changes is how far below market you must buy (~50% down low, ~90% up high), what
+> margin percentage is worth taking, and which payment rail is viable. An earlier
+> draft claimed a "$800 floor"; that was an artefact of applying one shipping cost
+> and one margin floor to every price point, not a fact about the market.
+>
+> **$800–$2,500 is the recommended STARTING band** — not because other bands don't
+> work, but because it's where deal flow, absolute margin and survivable risk overlap
+> best for a solo operator with limited float. Expand outward once the process works.
+
+### Why $800–$2,500 is the right place to start
 
 1. **Authenticity Guarantee is reachable.** $2,000+ is free; $500–$1,999.99 the buyer
    can add for $80. Under $500 there is no authentication and therefore no INAD defense.
