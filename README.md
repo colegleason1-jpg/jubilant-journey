@@ -29,6 +29,7 @@ customer has already committed to buy.**
 | 11 | [Free-tier architecture](docs/11-free-tier-architecture.md) | $0/month stack, and the six gotchas that break it |
 | 12 | [Buy box & offer ladder](docs/12-buy-box-and-offers.md) | **The fluid margin model.** What to pay at every price point, and why the payment rail decides the top end |
 | 13 | [Fulfilment routing](docs/13-fulfilment-routing.md) | Direct-ship vs through you, and the $1,000 rule |
+| 14 | [Authentication as a service](docs/14-authentication-as-a-service.md) | Selling the certificate as an upsell — and the one claim that would cost you the business |
 
 ## What's code here
 
