@@ -30,9 +30,10 @@ customer has already committed to buy.**
 | 12 | [Buy box & offer ladder](docs/12-buy-box-and-offers.md) | **The fluid margin model.** What to pay at every price point, and why the payment rail decides the top end |
 | 13 | [Fulfilment routing](docs/13-fulfilment-routing.md) | Direct-ship vs through you, and the $1,000 rule |
 | 14 | [Authentication as a service](docs/14-authentication-as-a-service.md) | Selling the certificate as an upsell, photo provenance rules |
-| 17 | [Foundation & stack](docs/17-foundation-and-stack.md) | **Buy vs build audit.** What is ours, what to assemble, every free tier, and the Shippo finding |
-| 16 | [Shadow mode runbook](docs/16-shadow-mode-runbook.md) | **Start here to actually run something.** Grade the model before spending money |
 | 15 | [Platform matrix](docs/15-platform-matrix.md) | **What each sourcing platform authenticates for free** — Bezel, Poshmark, Chrono24 escrow, and why Facebook Marketplace ranks last |
+| 16 | [Shadow mode runbook](docs/16-shadow-mode-runbook.md) | **Start here to actually run something.** Grade the model before spending money |
+| 17 | [Foundation & stack](docs/17-foundation-and-stack.md) | **Buy vs build audit.** What is ours, what to assemble, every free tier, and the Shippo finding |
+| 18 | [The watchlist](docs/18-watchlist.md) | The 36 references we scan for, why those, and how to drop the third that won't survive |
 
 ## What's code here
 

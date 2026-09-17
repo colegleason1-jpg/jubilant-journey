@@ -59,13 +59,14 @@ packages/core/        the engine. Zero dependencies, runs on Node 22 natively.
   platforms.ts        what each sourcing platform authenticates for free
 services/scout/       Python scanner. Stdlib only — CI skips pip install.
 supabase/migrations/  schema
-docs/                 00-17, read 00 then 01
+supabase/seeds/       watch_models.sql — the 36 references we scan for (docs/18)
+docs/                 00-18, read 00 then 01
 ```
 
 ## Commands
 
 ```bash
-cd packages/core   && npm test                      # 188 tests, no install needed
+cd packages/core   && npm test                      # 193 tests, no install needed
 cd services/scout  && python -m unittest discover -s tests
 cd services/scout  && python -m scout.main --replay  # full pipeline, no credentials
 cd services/scout  && python -m scout.main --smoke   # verify eBay credentials
