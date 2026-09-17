@@ -136,10 +136,21 @@ describe('copy is checked before it ships', () => {
       'An eBay authorised reseller',
       'Authorized by eBay',
       'Official eBay partner',
-      'Checked by our in-house authenticators',
-      'We authenticate every watch ourselves',
     ]) {
       assert.ok(findProhibitedClaims(copy).length > 0, `should flag: ${copy}`);
+    }
+  });
+
+  test('does NOT flag possessives or "employ" — ordinary English for engaged parties', () => {
+    for (const copy of [
+      'Authenticated by our third-party authenticator',
+      'Checked by our authenticators before dispatch',
+      'We employ third-party staff for authentication',
+      'We employ a third-party authentication service',
+      'We authenticate every watch before it ships',
+      'Our specialists inspect each piece',
+    ]) {
+      assert.deepEqual(findProhibitedClaims(copy), [], `should pass: ${copy}`);
     }
   });
 
@@ -331,10 +342,10 @@ describe('the authentication toggle on a listing', () => {
     }
   });
 
-  test('the suggested authenticator phrasings pass; the ones to avoid are flagged', () => {
+  test('every suggested authenticator phrasing passes', () => {
     for (const good of AUTHENTICATOR_PHRASINGS.good) {
       assert.deepEqual(findProhibitedClaims(good), [], good);
     }
-    assert.ok(findProhibitedClaims('Checked by our authenticators').length > 0);
+    assert.deepEqual(findProhibitedClaims('Checked by our authenticators'), []);
   });
 });

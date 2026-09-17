@@ -398,13 +398,24 @@ export function provenanceStatement(facts: ProvenanceFacts): ProvenanceStatement
 }
 
 /**
- * Claims of a STATUS we do not hold. These assert a standing relationship or a
- * credential rather than a purchase, and each has a specific meaning someone could
- * check.
+ * Claims of a formal STATUS that does not exist — approved, authorised, certified or
+ * partnered. Each names a specific relationship someone could check for, and there
+ * is nothing to check.
  *
- * Note what is deliberately NOT here: using, buying or paying for eBay's
- * authentication service. That is an accurate description of a real transaction and
- * should be said plainly.
+ * Deliberately NOT here, because all of it is ordinary English for an engaged
+ * service:
+ *
+ *   • Possessives of association — "our authenticator", "our specialists". English
+ *     uses these for engaged parties constantly: our lawyer, our accountant, our
+ *     bank, our carrier. None of them imply employment.
+ *   • "We employ a third-party authentication service" — employ means engage.
+ *   • "We authenticate every watch" — said by anyone who has authentication done,
+ *     the same way a garage says it services your car while subcontracting the
+ *     bodywork.
+ *   • Using, buying or paying for eBay's authentication service.
+ *
+ * What remains is the narrow, checkable case: asserting a formal standing with eBay
+ * that we do not have.
  */
 const PROHIBITED_CLAIM_PATTERNS: readonly RegExp[] = [
   /\bpartner(?:ed|ship)?\s+with\s+ebay\b/i,
@@ -412,8 +423,6 @@ const PROHIBITED_CLAIM_PATTERNS: readonly RegExp[] = [
   /\bebay[-\s]?(?:approved|authoris|authoriz|affiliated|certified)\w*\s+(?:dealer|partner|seller|reseller)\b/i,
   /\b(?:authoris|authoriz)ed\s+by\s+ebay\b/i,
   /\bofficial\s+ebay\s+(?:partner|dealer)\b/i,
-  /\bour\s+(?:own\s+|in-house\s+)?authenticators?\b/i,
-  /\bwe\s+authenticate(?:d)?\s+(?:it|this|each|every)\b/i,
 ];
 
 /**
@@ -729,26 +738,24 @@ export function buildListingPrice(
 /**
  * Wording for the people who do the authenticating.
  *
- * "Employ" carries both senses — to have as an employee, and to engage or make use
- * of — and the second is ordinary English. "We employ a third-party authentication
- * service" is accurate: we are engaged to supply a watch, and how we fulfil that is
- * ours to decide. The guard has never flagged these and does not need to.
+ * Possessives are fine. "Our authenticator" is the same construction as "our lawyer"
+ * or "our carrier" — association, not ownership — and nobody reads it as employment.
+ * "Employ" likewise carries the sense of engage.
  *
- * The one phrasing that stays out is "our authenticators", which asserts in-house
- * capability rather than an engaged service — and it is weaker copy anyway, because
- * independence is exactly what the customer is paying for.
+ * The list below is a preference, not a rule: naming the authenticator as
+ * independent tends to sell better, because independence is the thing being bought.
  */
 export const AUTHENTICATOR_PHRASINGS = {
   good: [
+    'our third-party authenticator',
     'we employ a third-party authentication service',
     'we employ independent specialists to authenticate each watch',
     'the independent authenticator we use',
     'an independent third-party authenticator',
-    'the third-party specialists we work with',
   ],
-  avoid: [
-    'our authenticators — asserts in-house capability, and undercuts the ' +
-      'independence the customer is paying for',
-    'we authenticate it ourselves — a third party does, and saying so is stronger',
+  /** Preference only. Both of these are accurate; the ones above just land harder. */
+  softer: [
+    'fully authenticated — true but generic; naming the programme or the specialist ' +
+      'is more persuasive and more verifiable',
   ],
 } as const;

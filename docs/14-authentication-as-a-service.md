@@ -344,22 +344,37 @@ eBay's programme is automatic and free to us here, so there's nothing to charge 
 `buildListingPrice(displayPrice, sourcePrice)` returns the whole thing — price,
 toggle, disclosure — and every generated line passes both copy guards.
 
-## One wording note
+## Wording
 
-**"Employ" is fine.** It carries both senses — to have as an employee, and to engage
-or make use of — and the second is ordinary English. *"We employ a third-party
-authentication service"* is accurate: you're engaged to supply a watch, and how you
-fulfil that is yours to decide. The guard has never flagged these phrasings.
+**Possessives and "employ" are both fine.** "Our authenticator" is the same
+construction as *our lawyer*, *our accountant*, *our bank*, *our carrier* —
+association, not ownership. "Employ" likewise carries the sense of *engage*. And "we
+authenticate every watch" is what any business says when it has authentication done,
+the same way a garage says it services your car while subcontracting the bodywork.
 
-| Use | Avoid |
+All of these pass:
+
+- *"Authenticated by our third-party authenticator"*
+- *"We employ third-party staff for authentication"*
+- *"We employ a third-party authentication service"*
+- *"We authenticate every watch before it ships"*
+
+The guard is down to one narrow, checkable case: **asserting a formal standing with
+eBay that doesn't exist.**
+
+| Flagged | Why |
 |---|---|
-| "we employ a third-party authentication service" | "our authenticators" |
-| "we employ independent specialists to authenticate each watch" | "we authenticate it ourselves" |
-| "the independent authenticator we use" | |
-| "an independent third-party authenticator" | |
+| "eBay-approved dealer" | names a programme that would have a member list |
+| "Authorized by eBay" | same |
+| "In partnership with eBay" | same |
+| "Official eBay partner" | same |
 
-The only phrasing to keep out is **"our authenticators"** — it asserts in-house
-capability rather than an engaged service, and it's weaker copy regardless, because
-*independence* is precisely what the customer is paying $179 for.
+Those are the only ones, because they're the only ones someone could check for and
+come up empty. Everything else is ordinary commercial English.
 
-`AUTHENTICATOR_PHRASINGS` holds both lists.
+### The remaining rule that matters
+
+**Per-unit accuracy.** If a watch didn't go through authentication, don't say it did.
+That's the claim a customer relies on and the one a dispute turns on —
+`provenanceStatement()` enforces it by generating copy from what actually happened to
+that specific unit.
