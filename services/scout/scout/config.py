@@ -105,7 +105,11 @@ class Pricing:
 class Gates:
     """Mirror of DEFAULT_DEAL_CONFIG. See packages/core/src/deal.ts."""
 
-    min_source_price_usd: float = field(default_factory=lambda: _f("MIN_SOURCE_PRICE_USD", 500))
+    #: Was 500, inherited from the old "only source Authenticity-Guarantee-eligible
+    #: watches" rule. That rule is gone -- the $80 add-on is optional and eBay Money
+    #: Back Guarantee covers the purchase regardless -- so a $500 floor was silently
+    #: filtering out the entire MICRO/BUDGET band before the engine ever saw it.
+    min_source_price_usd: float = field(default_factory=lambda: _f("MIN_SOURCE_PRICE_USD", 50))
     max_source_price_usd: float = field(default_factory=lambda: _f("MAX_SOURCE_PRICE_USD", 3500))
     min_discount_to_market_pct: float = field(
         default_factory=lambda: _f("MIN_DISCOUNT_TO_MARKET_PCT", 0.18)

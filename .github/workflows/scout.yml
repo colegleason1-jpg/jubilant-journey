@@ -20,10 +20,11 @@ on:
     - cron: "0,30 11-23,0-3 * * *"
   workflow_dispatch:
     inputs:
-      dry_run:
-        description: "Scan and print, but write nothing and send no email"
-        type: boolean
-        default: false
+      mode:
+        description: "How to run"
+        type: choice
+        default: shadow
+        options: [shadow, replay, smoke, live]
 
 concurrency:
   # A delayed run must never overlap the next one and double-spend the budget.
@@ -65,5 +66,15 @@ jobs:
           MIN_DISCOUNT_TO_MARKET_PCT: ${{ vars.MIN_DISCOUNT_TO_MARKET_PCT }}
           TARGET_DISCOUNT_TO_MARKET: ${{ vars.TARGET_DISCOUNT_TO_MARKET }}
           SCOUT_DEADLINE_SECONDS: "45"
-          SCOUT_DRY_RUN: ${{ inputs.dry_run }}
-        run: python -m scout.main
+          # SHADOW until the model has been graded against real outcomes. Every
+          # threshold in the engine is currently a number someone reasoned their way
+          # to, and reasoning is how the "$800 floor" and the flat margin gate got
+          # written. Switch to live only after scout.calibrate says the comps hold.
+          SCOUT_MODE: ${{ inputs.mode || 'shadow' }}
+        run: |
+          case "$SCOUT_MODE" in
+            replay) python -m scout.main --replay ;;
+            smoke)  python -m scout.main --smoke ;;
+            live)   python -m scout.main ;;
+            *)      python -m scout.main --shadow ;;
+          esac

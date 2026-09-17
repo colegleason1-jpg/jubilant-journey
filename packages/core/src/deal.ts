@@ -53,7 +53,10 @@ export interface DealConfig {
 }
 
 export const DEFAULT_DEAL_CONFIG: DealConfig = {
-  minSourcePriceUsd: 500, // below this there is no Authenticity Guarantee — docs/01 §4
+  // Was 500, inherited from the old "only source AG-eligible watches" rule. That
+  // rule is gone: the $80 add-on is optional and Money Back Guarantee covers the
+  // purchase regardless, so a $500 floor silently filtered out the whole cheap band.
+  minSourcePriceUsd: 50,
   maxSourcePriceUsd: 3500,
   minCompConfidence: 0.5,
   minDiscountToMarketPct: 0.18,

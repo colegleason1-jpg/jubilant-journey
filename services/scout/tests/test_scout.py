@@ -157,8 +157,15 @@ class TestGates(unittest.TestCase):
         self.assertLess(ev.econ.contribution_usd, 0)
         self.assertIn("MARGIN", ev.gates_failed)
 
-    def test_rejects_outside_the_configured_price_band(self):
+    def test_a_cheap_watch_is_no_longer_filtered_before_the_engine_sees_it(self):
+        # The old $500 floor came from the "only source AG-eligible watches" rule and
+        # silently removed the whole cheap band before anything was evaluated.
         ev = deal.evaluate(listing(price_usd=420), 700.0, CFG)
+        self.assertNotIn("PRICE_BAND", ev.gates_failed)
+        self.assertGreater(ev.econ.contribution_usd, 0)
+
+    def test_still_rejects_below_the_configured_floor(self):
+        ev = deal.evaluate(listing(price_usd=25), 700.0, CFG)
         self.assertIn("PRICE_BAND", ev.gates_failed)
 
     def test_rejects_thin_discount(self):

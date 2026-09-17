@@ -69,17 +69,28 @@ describe('evaluateDeal — the happy path', () => {
 });
 
 describe('evaluateDeal — gates', () => {
-  test('rejects below the Authenticity Guarantee floor', () => {
+  test('a cheap watch is no longer filtered out before the engine sees it', () => {
+    // The old $500 floor came from the "only source AG-eligible watches" rule and
+    // silently removed the entire cheap band. A $420 watch against a $620 market is
+    // a real deal and should be judged on its contribution like anything else.
     const r = evaluateDeal(
       candidate({ priceUsd: 420 }),
       regularSales(22, 620, 4),
       DEFAULT_DEAL_CONFIG,
       NOW,
     );
-    assert.ok(r.gatesFailed.includes('AUTHENTICATION_ELIGIBLE'));
+    assert.ok(!r.gatesFailed.includes('PRICE_BAND'));
+    assert.ok(r.economics.contributionUsd > 0, `contribution ${r.economics.contributionUsd}`);
+  });
+
+  test('still rejects below the configured floor', () => {
+    const r = evaluateDeal(
+      candidate({ priceUsd: 25 }),
+      regularSales(22, 620, 4),
+      DEFAULT_DEAL_CONFIG,
+      NOW,
+    );
     assert.ok(r.gatesFailed.includes('PRICE_BAND'));
-    assert.equal(r.pass, false);
-    assert.equal(r.score, 0);
   });
 
   test('rejects an illiquid model however good the price', () => {
