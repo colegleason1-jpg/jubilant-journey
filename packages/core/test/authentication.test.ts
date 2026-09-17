@@ -23,17 +23,36 @@ describe('the authentication upsell', () => {
     assert.equal(authenticationOffer(300, 200).offer, false);
   });
 
-  test('is a paid independent service in the middle band', () => {
+  test("uses eBay's cheap add-on when the customer elected it before we bought", () => {
+    // The option sits on the product page, so the election reaches us before the
+    // eBay checkout — which is exactly when the add-on must be chosen.
     const o = authenticationOffer(1400, 1100);
     assert.equal(o.offer, true);
-    assert.equal(o.method, 'INDEPENDENT');
-    assert.ok(o.netContributionUsd > 0);
+    assert.equal(o.method, 'EBAY_AG_ELECTED');
+    assert.equal(o.costToUsUsd, 80);
+    assert.equal(o.netContributionUsd, 99);
   });
 
-  test('uses an INDEPENDENT authenticator, not eBay, and says why', () => {
-    const o = authenticationOffer(1400, 1100);
-    assert.ok(o.operatorNotes.some((n) => n.includes('checkout-only')));
-    assert.ok(o.operatorNotes.some((n) => n.includes('eBay-branded')));
+  test('falls back to an independent service on STOCKED units', () => {
+    // We already own it, so the eBay checkout is behind us and the add-on can never
+    // be applied. Costs more and takes longer — a real reason to prefer Mode B.
+    const o = authenticationOffer(1400, 1100, undefined, false);
+    assert.equal(o.method, 'INDEPENDENT');
+    assert.ok(o.costToUsUsd > 150);
+    assert.ok(o.netContributionUsd < 30);
+    assert.ok(o.operatorNotes.some((n) => n.includes('STOCKED')));
+  });
+
+  test("the eBay route is cheaper AND faster than the independent one", () => {
+    const viaEbay = authenticationOffer(1400, 1100, undefined, true);
+    const viaIndependent = authenticationOffer(1400, 1100, undefined, false);
+    assert.ok(viaEbay.costToUsUsd < viaIndependent.costToUsUsd);
+    assert.ok(viaEbay.addedDays < viaIndependent.addedDays);
+  });
+
+  test('outside the add-on band, sourced-to-order still needs an independent service', () => {
+    // $400 source is below eBay's $500 minimum for the add-on.
+    assert.equal(authenticationOffer(800, 400).method, 'INDEPENDENT');
   });
 
   test('discloses the added days in the customer copy', () => {

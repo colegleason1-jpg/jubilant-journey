@@ -9,30 +9,42 @@
  * You are also under no obligation to disclose where you source from. Retailers don't
  * publish their suppliers. That part is ordinary commercial practice.
  *
- * ── Why this cannot use eBay's certificate ──────────────────────────────────────
- * Two hard mechanical problems, both verified:
+ * ── Getting eBay's certificate, which is the cheap fast one ─────────────────────
+ * eBay's Authenticity Guarantee add-on "is only available at checkout during purchase
+ * — it cannot be added after the purchase has been completed."
  *
- *   1. TIMING. eBay's Authenticity Guarantee add-on "is only available at checkout
- *      during purchase — it cannot be added after the purchase has been completed."
- *      So the election happens when WE buy on eBay, which is before our customer has
- *      been asked. "Ask them before we ship" is structurally impossible with it.
+ * That constraint is satisfied as long as the customer elects the certificate BEFORE
+ * we buy, because our eBay purchase IS that checkout. So the option belongs on the
+ * product page as a line item, not as a question asked before shipping:
  *
- *   2. BRANDING. An AG item arrives with an eBay-branded card or tag from eBay's
- *      authenticator. Handing that to the customer discloses the sourcing anyway,
- *      which defeats the point of the exercise.
+ *     customer orders WITH the certificate option  ──►  we buy on eBay AND elect
+ *     the $80 add-on at that checkout  ──►  authenticator inspects  ──►  us  ──►
+ *     customer, with the certificate
  *
- * An INDEPENDENT authenticator solves both: we send it after the watch is in hand, on
- * our timetable, and the certificate is neutral.
+ * This is strictly better than sending it to an independent service afterwards:
+ * $80 instead of ~$155, and no extra round trip because the authenticator already
+ * sits in the eBay shipping path.
+ *
+ * ── When the independent route is still needed ──────────────────────────────────
+ * STOCKED inventory (Mode A in docs/12). If we already own the watch, the eBay
+ * checkout is behind us and the add-on can never be applied to it. Selling
+ * authentication on a watch already in hand means an independent authenticator.
+ *
+ * ── On the eBay-branded tag ─────────────────────────────────────────────────────
+ * An AG item arrives with an eBay-branded card or tag, so this route does reveal
+ * that the watch passed through eBay. That is worth having rather than hiding:
+ * "verified through eBay's Authenticity Guarantee" is a recognised, trusted marker,
+ * and it is a stronger claim to a buyer than an unfamiliar independent service.
+ * Choose the independent route when a neutral certificate genuinely matters more.
  *
  * ── The three ways to do it ─────────────────────────────────────────────────────
  *
- *   EBAY_AG_ELECTED   $80, decided at OUR checkout so we can elect it at eBay's.
- *                     Only in the $500–$1,999.99 source band. eBay-branded tag.
- *   EBAY_AG_FREE      $0. Automatic above a $2,000 source price. Also eBay-branded,
- *                     but free — so give it away and say so loudly.
- *   INDEPENDENT       $50–$250 depending on the service. Post-receipt, any price
- *                     point, neutral certificate, our timetable. ← the one that
- *                     matches the pitch.
+ *   EBAY_AG_ELECTED   $80. Customer elects on the product page; we elect it at the
+ *                     eBay checkout. Source $500–$1,999.99. Cheapest and fastest.
+ *   EBAY_AG_FREE      $0. Automatic above a $2,000 source price. Give it away and
+ *                     say so loudly.
+ *   INDEPENDENT       ~$155 round trip. For STOCKED units, where the eBay checkout
+ *                     is already behind us. Neutral certificate, ~5 extra days.
  */
 
 export type AuthenticationMethod = 'NONE' | 'EBAY_AG_ELECTED' | 'EBAY_AG_FREE' | 'INDEPENDENT';
@@ -116,13 +128,16 @@ export interface AuthenticationOffer {
 /**
  * Decide what to offer on a given order.
  *
- * Three bands, and the logic is mostly about not being greedy in the one place where
- * generosity is obviously worth more than the fee.
+ * `sourcedToOrder` is the decisive input. When true (Mode B — we buy after the
+ * customer orders, our default) the customer's election reaches us before the eBay
+ * checkout, so we can use eBay's $80 add-on. When false (Mode A — stocked) the eBay
+ * checkout is already behind us and only an independent authenticator remains.
  */
 export function authenticationOffer(
   orderValueUsd: number,
   sourcePriceUsd: number,
   config: AuthenticationConfig = DEFAULT_AUTHENTICATION,
+  sourcedToOrder = true,
 ): AuthenticationOffer {
   const notes: string[] = [];
 
@@ -171,35 +186,56 @@ export function authenticationOffer(
     };
   }
 
-  // The upsell band. Independent, because eBay's add-on cannot be elected after we
-  // have already bought — and its tag would disclose sourcing.
-  const cost = authenticationCostFor('INDEPENDENT', sourcePriceUsd, config);
-  notes.push(
-    'use an INDEPENDENT authenticator: eBay\'s add-on is checkout-only (cannot be ' +
-      'added after purchase) and its tag is eBay-branded',
-  );
-  notes.push(`adds ~${config.independentTurnaroundDays} days — disclose that up front`);
-  if (sourcePriceUsd >= config.ebayMinimumUsd && sourcePriceUsd < config.ebayFreeThresholdUsd) {
+  // The upsell band.
+  const ebayEligible =
+    sourcedToOrder &&
+    sourcePriceUsd >= config.ebayMinimumUsd &&
+    sourcePriceUsd < config.ebayFreeThresholdUsd;
+
+  const method: AuthenticationMethod = ebayEligible ? 'EBAY_AG_ELECTED' : 'INDEPENDENT';
+  const cost = authenticationCostFor(method, sourcePriceUsd, config);
+  const addedDays = ebayEligible ? 3 : config.independentTurnaroundDays;
+
+  if (ebayEligible) {
     notes.push(
-      `cheaper alternative: elect eBay's $${config.ebayAddonUsd} add-on at purchase ` +
-        `IF the customer opted in before you bought, and you accept the eBay-branded tag`,
+      'customer elected it on the product page BEFORE we buy, so we elect the ' +
+        `$${config.ebayAddonUsd} add-on at the eBay checkout — this is the cheap fast route`,
+    );
+    notes.push(
+      'certificate and tag are eBay-branded: say "verified through eBay\'s ' +
+        'Authenticity Guarantee" — a recognised marker, and true',
+    );
+  } else if (!sourcedToOrder) {
+    notes.push(
+      'STOCKED unit: the eBay checkout is behind us, so the add-on can never be ' +
+        'applied. Independent authenticator is the only route.',
+    );
+    notes.push(`adds ~${config.independentTurnaroundDays} days — disclose that up front`);
+  } else {
+    notes.push(
+      `source price $${sourcePriceUsd} is outside eBay's $${config.ebayMinimumUsd}` +
+        `–$${config.ebayFreeThresholdUsd} add-on band; independent authenticator instead`,
     );
   }
+
+  const customerCopy = ebayEligible
+    ? `Add third-party authentication — $${config.upsellPriceUsd}. This watch will be ` +
+      `inspected by a professional third-party authenticator before it reaches you, ` +
+      `and ships with their certification. Adds about ${addedDays} business days.`
+    : `Add independent authentication — $${config.upsellPriceUsd}. Before we ship, we ` +
+      `send this specific watch to an independent third-party specialist for a ` +
+      `professional multi-point authentication, and you receive their signed ` +
+      `certificate with the watch. Adds about ${addedDays} business days.`;
 
   return {
     offer: true,
     includedFree: false,
     priceToCustomerUsd: config.upsellPriceUsd,
-    method: 'INDEPENDENT',
+    method,
     costToUsUsd: cost,
     netContributionUsd: Math.round((config.upsellPriceUsd - cost) * 100) / 100,
-    addedDays: config.independentTurnaroundDays,
-    customerCopy:
-      `Add independent authentication — $${config.upsellPriceUsd}. Before we ship, we ` +
-      `send this specific watch to an independent third-party specialist for a ` +
-      `professional multi-point authentication, and you receive their signed ` +
-      `certificate with the watch. Adds about ${config.independentTurnaroundDays} ` +
-      `business days.`,
+    addedDays,
+    customerCopy,
     operatorNotes: notes,
   };
 }

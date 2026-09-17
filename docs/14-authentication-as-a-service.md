@@ -15,40 +15,84 @@ professionals, and it is that specific watch. **You are also under no obligation
 disclose your supplier.** Retailers don't publish where they buy. That part is
 ordinary commercial practice, not a grey area.
 
-## ⚠️ Two reasons this cannot use eBay's certificate
+## Put the option on the listing, and eBay's cheap certificate works
 
-**1. Timing — a hard blocker.** eBay's Authenticity Guarantee add-on *"is only
-available at checkout during purchase — it cannot be added after the purchase has been
-completed."* The election happens when **we** buy on eBay, which is before our
-customer has been asked. "Ask them before we ship" is structurally impossible with it.
+eBay's add-on *"is only available at checkout during purchase — it cannot be added
+after the purchase has been completed."*
 
-**2. Branding.** An AG item arrives with an **eBay-branded card or tag**. Handing that
-to the customer discloses the sourcing anyway, which defeats the point.
+That's satisfied as long as the customer elects it **before we buy**, because **our
+eBay purchase is that checkout.** So the option belongs on the product page as a line
+item, not as a question asked before shipping:
 
-An **independent authenticator** fixes both: we send it once the watch is in hand, on
-our timetable, and the certificate is neutral.
+```
+customer orders WITH the certificate option
+        ↓
+we buy on eBay AND elect the $80 add-on at that checkout
+        ↓
+eBay's authenticator inspects it (already in the shipping path)
+        ↓
+us → customer, with the certificate
+```
 
-## The three bands
+**This is the route to use.** $80 instead of ~$155, and no extra round trip because
+the authenticator already sits between the seller and us.
 
-| Order value | What we do | Price | Our cost | Net |
-|---|---|---:|---:|---:|
-| **Under $500** | Don't offer it | — | — | — |
-| **$500–$2,500** | Independent authenticator, post-receipt | **$179** | ~$155 | **+$24** |
-| **Above $2,500** | **Include it free** | $0 | $0 | $0 |
+### When the independent route is still needed
+
+**Stocked inventory** (Mode A in [docs/12](12-buy-box-and-offers.md)). If we already
+own the watch, the eBay checkout is behind us and the add-on can never be applied to
+that unit. Selling authentication on a watch already in hand means an independent
+authenticator: ~$155 and ~5 days instead of $80 and ~3.
+
+That's a real, quantified reason to prefer **sourced-to-order** as the default
+operating mode — it's not just about inventory risk.
+
+### The eBay-branded tag is an asset, not a leak
+
+An AG item arrives with an eBay-branded card or tag, so this route does reveal the
+watch passed through eBay. **Keep it.** *"Verified through eBay's Authenticity
+Guarantee"* is a recognised, trusted marker — a stronger claim to most buyers than an
+unfamiliar independent service, and completely true. Use the independent route only
+when a neutral certificate genuinely matters more than the recognition.
+
+## The bands
+
+**Sourced to order** (Mode B — our default):
+
+| Order value | Method | Price | Our cost | **Net** | Adds |
+|---|---|---:|---:|---:|---:|
+| Under $500 | Not offered | — | — | — | — |
+| **$500–$2,500** | **eBay AG, elected at our checkout** | **$179** | **$80** | **+$99** | 3 days |
+| **Above $2,500** | **Include it free** | $0 | $0 | $0 | 2 days |
+
+**Stocked** (Mode A — we already own it):
+
+| Order value | Method | Price | Our cost | Net | Adds |
+|---|---|---:|---:|---:|---:|
+| $500–$2,500 | Independent authenticator | $179 | ~$155 | +$24 | 5 days |
 
 **Why free at the top:** eBay's programme is automatic and free to us above a $2,000
-source price. *"Free independent authentication on every watch over $2,500"* converts
+source price. *"Free third-party authentication on every watch over $2,500"* converts
 better than $179 of margin earns, and it costs nothing. Don't charge for something you
-get for free — advertise it instead.
+get free — advertise it.
 
 **Market rates for reference:** independent services run **$50–$300**; Chrono24's own
-certification is **$249** with insured shipping. At $179 we're well inside market and
-still positive after the round trip.
+certification is **$249** with insured shipping. $179 sits comfortably inside market.
 
-The margin is thin on purpose. The upsell isn't really a profit centre — it's a
-**chargeback shield**. A customer holding a professional authentication certificate
-does not file "it's fake", and that's the dispute category 3D Secure doesn't cover
-([docs/06](06-payments-and-fraud.md)).
+At +$99 on the sourced-to-order route this is a genuine margin line, not just a
+chargeback shield — though it's both. A customer holding a professional authentication
+certificate does not file "it's fake", and that's the dispute category 3D Secure
+doesn't cover ([docs/06](06-payments-and-fraud.md)).
+
+### Baking it in vs. offering it
+
+You mentioned baking the cost in. Both work; the trade is:
+
+- **Optional line item** *(recommended for $500–$2,000)* — keeps the headline price
+  competitive, which is the whole value proposition. An $80 cost baked into a $900
+  watch is a 9% price rise on the thing customers compare.
+- **Always included** *(above $2,000)* — free to us anyway, simpler ops, and a much
+  stronger trust signal: *every* watch authenticated.
 
 ---
 
