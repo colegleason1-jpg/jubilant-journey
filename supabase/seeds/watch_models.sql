@@ -1,4 +1,4 @@
--- Starting watchlist — 36 references.
+-- Starting watchlist — 35 references.
 --
 -- THIS IS A HYPOTHESIS, NOT A RESULT. The prices below are indicative, drawn from
 -- general market knowledge rather than measured, and exist only to put references
@@ -8,24 +8,65 @@
 --
 -- SELECTION CRITERIA, in order of how much they matter:
 --
---   1. COUNTERFEIT RISK — the strongest filter, and it favours the cheap end.
+--   1. COUNTERFEIT RISK — an exclusion filter, not a selection signal: it says what
+--      we must not touch, while (2) says where the money is. It favours the cheap end.
 --      Rolex alone is 80%+ of all fake watches, and used-watch retailers now
 --      identify only about 20% of counterfeits because superclones have outrun
 --      visual inspection. A $600 Hamilton is rarely faked because the economics
 --      do not work for the faker. That is a real safety advantage of this band,
 --      independent of margin.
 --
---   2. PRICE DISPERSION — the spread is the business. A Tissot PRX depreciates
---      ~6% from retail, so there is nothing to capture. An Oris Aquis goes from
---      $2,500 retail to ~$1,200 pre-owned; that width is where mispriced listings
---      live. Counter-intuitively, LOW depreciation is bad for us.
+--   2. SELLER SOPHISTICATION — the criterion that actually finds money. It is about
+--      variance WITHIN the pre-owned market, not the gap between new and pre-owned.
+--      Those are independent axes and only the first one pays us.
 --
---   3. LIQUIDITY — enough sales, regularly. Enforced downstream by
+--      We buy pre-owned and sell pre-owned. What a watch costs new is not a price we
+--      ever transact at, so the new→used drop is not a spread we can capture. The
+--      only way to capture it would be to sell a used watch as new, which is the one
+--      thing this repo exists to prevent.
+--
+--      What pays is two listings of the same reference in the same condition priced
+--      $200 apart because one seller looked up the market and the other did not.
+--      That variance is highest where the owner is an ordinary person rather than a
+--      dealer or collector: someone with $700 in a watch, selling because they are
+--      done with it, who does not know the market price, does not research it, and
+--      is not trying to extract the last dollar. Under ~$2,000 that describes most
+--      sellers. Above it, most listings are priced by people who know exactly what
+--      they have, and the variance collapses.
+--
+--      So a SMALL depreciation curve is GOOD. It means the reference has a stable,
+--      well-known anchor price, which makes the comp trustworthy and an underpriced
+--      listing obvious. The Tissot PRX holding ~94% of retail is a feature, not a
+--      disqualification.
+--
+--      An earlier version of this file said the opposite — that low depreciation
+--      meant "nothing to capture" — and ranked references by how far they fell from
+--      retail. It was measuring the wrong axis entirely. See the mistakes table in
+--      CLAUDE.md.
+--
+--   3. MOVEMENT — mechanical or automatic. The buyer in this band is a hobbyist who
+--      cares about what is inside and cannot be seen: automatics, hand-wounds,
+--      day-dates, moonphases, power reserves. They are buying a movement and a
+--      bracelet, not a logo, and on the merits they will take a good $2,000 movement
+--      over a Rolex. They do not want a battery, and they certainly do not want a
+--      smart watch.
+--
+--      The rule, since it has edges: quartz is excluded in the $200–$2,000 band,
+--      where that buyer lives. Below it the buyer is different and the reference is
+--      a customer-acquisition play (the DW-5600). Above it, quartz is allowed only
+--      where the movement is itself the collectible (the SBGX261's 9F).
+--
+--   4. LIQUIDITY — enough sales, regularly. Enforced downstream by
 --      computeLiquidity(); listed here as a judgement about which references have
 --      a real second-hand market rather than occasional collector trades.
 --
---   4. SEARCH DEMAND — a reference people actively look for converts on the
+--   5. SEARCH DEMAND — a reference people actively look for converts on the
 --      storefront and earns organic traffic.
+--
+-- WHERE THE CORE OF THIS LIST SITS: $200–$2,000. That is where hobbyist money is,
+-- where sellers are least likely to have priced correctly, and where the counterfeit
+-- economics still protect us. References outside it earn their place for a specific
+-- reason, not by default.
 --
 -- DELIBERATELY EXCLUDED: Rolex, Audemars Piguet, Patek Philippe. Thin spreads,
 -- ruinous single-unit downside, and the overwhelming majority of the fake market.
@@ -40,12 +81,13 @@
 -- allowed — is chosen by operationalProfile(orderValueUsd) in tiers.ts from what
 -- we LIST the unit at, resolved per unit at scan time.
 --
--- The two diverge a lot, and always downward. Pre-owned typically transacts
--- 40–60% under retail, so a reference in the top section here will often sell
--- inside the CORE profile: the $2,500 Oris Aquis is the dispersion example in
--- criterion 2 precisely because it changes hands near $1,200. So do not read a
--- high retail figure as "do not touch until the fraud controls are live" — that
--- gate is on order value, and tiers.ts applies it per unit on its own.
+-- The two diverge, and always downward, so a reference in the top section here will
+-- often sell inside the CORE profile. Do not read a high retail figure as "do not
+-- touch until the fraud controls are live" — that gate is on order value, and
+-- tiers.ts applies it per unit on its own.
+--
+-- Note that how FAR a reference falls from retail is not itself interesting; see
+-- criterion 2. It is recorded because the comp engine wants an anchor.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay_queries, active) values
@@ -53,12 +95,13 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 -- ── Retail under $400 ──────────────────────────────────────────────────────────
 -- Thin absolute margins, but fast handling and near-zero dispute exposure. Good
 -- place to learn the pipeline where a mistake costs $40.
+-- Quartz, and deliberately so: below the enthusiast band the buyer is different and
+-- this is a customer-acquisition play. Probably the most liquid cheap watch there is.
 ('casio-dw5600',        'Casio',    'DW-5600E',   'G-Shock Square',      70,  array['casio g-shock dw5600','g shock square dw-5600'], true),
 ('seiko-5-snk809',      'Seiko',    'SNK809',     'Seiko 5 Field',       125, array['seiko 5 snk809','seiko snk809 field'], true),
 ('orient-bambino-v4',   'Orient',   'FAC08',      'Bambino V4',          150, array['orient bambino version 4','orient bambino fac08'], true),
 ('timex-marlin-hand',   'Timex',    'TW2T18000',  'Marlin Hand-Wound',   229, array['timex marlin hand wound'], true),
 ('orient-kamasu',       'Orient',   'RA-AA0004',  'Kamasu',              300, array['orient kamasu','orient ra-aa0004'], true),
-('citizen-promaster',   'Citizen',  'BN0151',     'Promaster Diver',     350, array['citizen promaster diver bn0151'], true),
 
 -- ── Retail $400–1,000 ──────────────────────────────────────────────────────────
 -- The densest band on the list, and the one most likely to survive shadow mode:
@@ -88,6 +131,8 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 ('longines-master-40',  'Longines', 'L2.793.4',   'Master Collection',   2200, array['longines master collection l2.793'], true),
 ('oris-65-40',          'Oris',     '01 733 7707','Divers Sixty-Five 40mm',2200, array['oris divers sixty five 40mm','oris 65 733 7707'], true),
 ('rado-captain-cook',   'Rado',     'R32105',     'Captain Cook 42mm',   2200, array['rado captain cook 42mm r32105'], true),
+-- The quartz exception at the top end: the 9F is thermocompensated, hand-adjusted and
+-- collected AS a movement. Criterion 3 excludes batteries, not this.
 ('seiko-gs-sbgx261',    'Grand Seiko','SBGX261',  'GS Quartz 9F',        2300, array['grand seiko sbgx261'], true),
 
 -- ── Retail $2,500 and above ────────────────────────────────────────────────────

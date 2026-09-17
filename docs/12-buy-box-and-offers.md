@@ -201,9 +201,43 @@ system that quietly pays the ask after two declines is the expensive bug here.
 **⚠️ You send offers by hand.** eBay prohibits automated order placement and an offer
 is an order commitment.
 
-**⚠️ Stocked buying only.** A seller has 48 hours to answer; two rungs can burn four
-days, which doesn't fit inside a 7-day card authorization with shipping still to come.
-For an order already placed on our site, buy at the ask immediately.
+### On a customer-triggered order, negotiate anyway
+
+An earlier version of this section said *"stocked buying only — for an order already
+placed on our site, buy at the ask immediately,"* reasoning that two rungs burn four
+days and wouldn't fit a 7-day authorization *"with shipping still to come."*
+
+**Shipping is not still to come.** Capture fires on `PURCHASE_CONFIRMED`, the moment
+the eBay order is placed — `orderflow.ts` has exactly one `CAPTURE_PAYMENT` and it is
+on `SOURCING → SECURED`, before `IN_TRANSIT_INBOUND` exists. Transit is entirely
+outside the authorization window, which is the whole point of capturing at SECURED
+([docs/06](06-payments-and-fraud.md)). The window only has to cover negotiation and
+purchase.
+
+That changes the answer, because the negotiation delta is not a bonus — it is the
+primary margin. The model is: list at a slim expected contribution, and when a
+customer buys, negotiate the source down. The gates clear on the slim number, so
+whatever the negotiation returns is upside on a deal that already passed.
+
+Worst case, using eBay's full 48-hour seller response cap:
+
+| Rungs | Visa (4d18h) | Mastercard / Amex / Discover (7d) |
+|---|---|---|
+| **1 rung** | 48h used, **66h slack** ✅ | 48h used, **120h slack** ✅ |
+| 2 rungs | 96h used, 18h slack — trips the T-24h alert ⚠️ | 96h used, **72h slack** ✅ |
+
+**So: one rung on every customer-triggered order.** It fits on every card brand with
+days to spare, and 48h is the cap — most sellers answer far sooner.
+
+The second rung is a judgement call: fine on Mastercard/Amex/Discover, and on Visa it
+still technically fits but leaves you inside the T-24h urgency alert with no room for
+anything to go wrong. Take the ask rather than the second rung on a Visa order.
+
+**Stocked buying** — where no customer is waiting and no authorization is running —
+has no clock on it at all. Use the full ladder.
+
+**⚠️ You still send every offer by hand.** eBay prohibits automated order placement
+and an offer is an order commitment. Non-negotiable 1.
 
 ---
 

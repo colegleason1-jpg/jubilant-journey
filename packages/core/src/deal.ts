@@ -210,7 +210,15 @@ export function evaluateDeal(
     );
   }
   if (comps.spreadPct > 0.3) {
-    warnings.push('wide price dispersion — market disagrees on this reference');
+    // NOT a reason to walk. A wide interquartile range in the pre-owned market is
+    // the seller-sophistication signal this whole watchlist is selected for: some
+    // owners priced from research and some did not. It does mean the median is a
+    // less certain estimate — which comps.ts already prices in via spreadScore —
+    // so the action is to verify the comp, not to skip the deal.
+    warnings.push(
+      `wide spread (IQR ${(comps.spreadPct * 100).toFixed(0)}% of median) — where ` +
+        `the opportunity lives, but check the comp before trusting the number`,
+    );
   }
   if (candidate.imageUrls.length < 4) {
     warnings.push('few photos — ask the seller for more before buying');

@@ -190,6 +190,10 @@ export function computeComps(
 
   // Confidence blends sample size, price agreement, and freshness.
   const sizeScore = Math.min(1, kept.length / 20);
+  // Wide spread lowers CONFIDENCE, not desirability. Estimate certainty and profit
+  // opportunity are different questions: dispersion is where the money is (see the
+  // watchlist criteria) but it also makes the median a looser claim. Do not 'fix'
+  // this to reward spread — deal.ts is where opportunity is judged.
   const spreadScore = clamp01(1 - spreadPct / 0.5);
   const recencyScore = clamp01(1 - daysSinceLast / 45);
   const confidence = 0.4 * sizeScore + 0.35 * spreadScore + 0.25 * recencyScore;

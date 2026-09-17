@@ -43,7 +43,7 @@ screened 11 listings in 0.0s -> 5 passed, 6 rejected
 | 3 | eBay developer account → production keyset → Browse API | 30 min |
 | 4 | Add repo secrets: `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | 10 min |
 | 5 | **Verify credentials**: `python -m scout.main --smoke` | 2 min |
-| 6 | Seed `watch_models` — `psql "$SUPABASE_DB_URL" -f supabase/seeds/watch_models.sql` (36 references, [docs/18](18-watchlist.md)) | 5 min |
+| 6 | Seed `watch_models` — `psql "$SUPABASE_DB_URL" -f supabase/seeds/watch_models.sql` (35 references, [docs/18](18-watchlist.md)) | 5 min |
 | 7 | Seed one `comp_snapshots` row per model (Terapeak by hand is fine) | 2 hrs |
 | 8 | Run the workflow manually, mode `shadow` | 5 min |
 | 9 | **Leave it running for three weeks. Spend nothing.** | — |

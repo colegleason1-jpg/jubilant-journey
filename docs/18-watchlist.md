@@ -1,6 +1,6 @@
 # 18 — The Watchlist
 
-`supabase/seeds/watch_models.sql` — 36 references.
+`supabase/seeds/watch_models.sql` — 35 references.
 
 The scanner cannot look for watches in general. It searches for specific strings
 against specific references, so this file is the aperture: **a deal that is not on
@@ -26,19 +26,29 @@ reference is a decision made from data, and re-seeding must not silently undo it
 The full rationale is in the header comment of the seed file, kept there so it is read
 by whoever edits the list. In short, in order of weight:
 
-1. **Counterfeit risk** — the strongest filter, and it favours the cheap end. Rolex
-   alone is 80%+ of fakes, and used-watch retailers now catch only ~20% of
-   counterfeits because superclones outran visual inspection. Nobody bothers faking a
-   $600 Hamilton. This is a safety property of the band, independent of margin.
-2. **Price dispersion** — the spread *is* the business. A Tissot PRX holds ~94% of
-   retail, so there is nothing to capture; an Oris Aquis goes $2,500 → ~$1,200, and
-   that width is where mispriced listings live. Low depreciation is bad for us.
-3. **Liquidity** — a real second-hand market, not occasional collector trades.
-4. **Search demand** — converts on the storefront and earns organic traffic.
+1. **Counterfeit risk** — an exclusion filter: what we must not touch. Rolex alone is
+   80%+ of fakes, and used-watch retailers now catch only ~20% of counterfeits because
+   superclones outran visual inspection. Nobody bothers faking a $600 Hamilton, so the
+   cheap end is safer on the merits, independent of margin.
+2. **Seller sophistication** — the actual selection signal, and the one that finds
+   money. Variance *within* the pre-owned market, not the new→used gap. Two identical
+   listings priced $200 apart because one seller researched it and the other didn't.
+   Highest under ~$2,000, where owners are ordinary people selling a watch they're done
+   with; it collapses above that, where sellers know what they have.
+3. **Movement** — mechanical or automatic. Quartz is excluded in the $200–$2,000 band;
+   allowed below it (different buyer, acquisition play) and above it only where the
+   movement is the collectible.
+4. **Liquidity** — a real second-hand market, not occasional collector trades.
+5. **Search demand** — converts on the storefront and earns organic traffic.
+
+**Low depreciation is good, not bad.** It means a stable, well-known anchor price,
+which makes the comp trustworthy and an underpriced listing obvious. The Tissot PRX
+holding ~94% of retail is a feature.
 
 Excluded on purpose: Rolex, AP, Patek (thin spreads, ruinous single-unit downside,
 most of the fake market) and the Seiko SKX007/009 (liquid, but among the most faked
-affordable divers).
+affordable divers). The Citizen Promaster was dropped under criterion 3 — solar quartz
+at $350 sits in the band where the movement argument bites hardest.
 
 ### Retail price is not the operational tier
 
@@ -103,9 +113,14 @@ having count(*) >= 10
 order by best_disc_pct;
 ```
 
-Plenty of listings, and the best one still isn't close. That is criterion 2 failing in
-production: the reference holds its value too well for there to be a spread. This is
-the honest drop — supply is real, the market is just efficient. Set `active = false`.
+Plenty of listings, and the best one still isn't close. `discount_to_market_pct` is
+measured against the *used* market, so this is criterion 2 failing in production: every
+seller of this reference prices it correctly. Note what this is **not** — it is not
+about depreciation from retail. A reference that barely depreciates can still have
+sellers scattered ±25% around the used price, which is the ideal case.
+
+An efficient used market is the honest drop: supply is real, the sellers are just all
+informed. Set `active = false`.
 
 ### 3. Comps too weak to trade on
 
@@ -195,7 +210,7 @@ price order. Then:
   within ~15% of each other, there is no spread and the reference will only ever
   produce query-1 and query-2 noise.
 - Watch the API budget: the Browse API allows ~5,000 calls/day and cost scales with
-  total query strings, not references. 36 references × 48 strings is comfortable; a few
+  total query strings, not references. 35 references × 47 strings is comfortable; a few
   hundred would not be.
 
 ## Deactivating, not deleting

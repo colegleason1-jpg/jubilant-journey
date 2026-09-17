@@ -9,6 +9,25 @@ Buy pre-owned watches below market, sell them slightly under market on our own
 storefront, ship, bank the difference, reinvest all of it. Point A is an undervalued
 watch; point B is money in the bank. Everything here is the vehicle between them.
 
+**How the margin is actually made — the sequence matters.** We list at a slim expected
+contribution. When a customer buys, we then source the unit and negotiate the seller
+down. The deal already cleared the gates on the slim number, so the negotiation is
+upside on a sale that was viable without it. This is why `orderflow.ts` authorizes
+first and captures only on `PURCHASE_CONFIRMED` — the sequence is the business model,
+not just a fraud control.
+
+**Where the spread comes from:** not depreciation, and not our cleverness. Sub-$2,000
+pre-owned watches are mostly sold by ordinary owners who don't know the market price,
+don't research it, and aren't trying to extract the last dollar. Two identical
+listings sit $200 apart because one seller looked it up and the other didn't. That
+variance is the inventory. It collapses above ~$2,000, where sellers know what they
+have. **Sub-$2,000 is the specialty, not the starter band.**
+
+**Who the buyer is:** hobbyists, roughly $200–$2,000, who care about the movement they
+can't see — automatics, hand-wounds, day-dates, moonphases. They are buying a movement
+and a bracelet, not a logo, and on the merits they'll take a good $2,000 movement over
+a Rolex. No batteries, no smart watches.
+
 **We are in the business of making money, not inventing things.** Assemble from
 existing parts wherever a part exists. See [docs/17](docs/17-foundation-and-stack.md)
 for what is genuinely ours versus what is bought.
@@ -41,6 +60,8 @@ for what is genuinely ours versus what is bought.
 | Crediting eBay Partner Network on our own purchases | $34.50 of a $38 contribution — it was carrying the deal | Defaults to zero, unverified |
 | `min_source_price_usd` left at $500 after the AG rule was dropped | Silently filtered the entire cheap band | Lowered to $50 |
 | Recommending Vercel Hobby | Non-commercial only; a storefront breaks the terms | Cloudflare Pages |
+| Ranking watchlist references by how far they fall from retail | Would have dropped the best references — the PRX holds 94% of retail and is a *good* pick | Dispersion is variance WITHIN the used market, driven by seller sophistication. New→used is an axis we never transact on; capturing it would mean selling used as new |
+| "For an order already placed on our site, buy at the ask immediately" | Deleted the primary margin source on every customer-triggered order | Wrong premise: transit is outside the auth window because capture fires at `PURCHASE_CONFIRMED`. One offer rung fits on every card brand with 66h+ to spare |
 
 **The pattern:** every one was a number reasoned toward rather than measured. That is
 what `--shadow` and `scout.calibrate` exist to prevent.
@@ -59,7 +80,7 @@ packages/core/        the engine. Zero dependencies, runs on Node 22 natively.
   platforms.ts        what each sourcing platform authenticates for free
 services/scout/       Python scanner. Stdlib only — CI skips pip install.
 supabase/migrations/  schema
-supabase/seeds/       watch_models.sql — the 36 references we scan for (docs/18)
+supabase/seeds/       watch_models.sql — the 35 references we scan for (docs/18)
 docs/                 00-18, read 00 then 01
 ```
 
