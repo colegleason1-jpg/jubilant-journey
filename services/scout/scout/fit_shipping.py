@@ -58,7 +58,16 @@ from .shipping import (
 #: Declared values to quote, one per band the engine trades. Chosen to straddle every
 #: parcel switch: 30/45 envelope, 60/200 light box, 300/800 standard box with original
 #: packaging, 1500+ full set.
-BANDS = [30, 45, 60, 200, 300, 800, 1500, 3000, 8000]
+# Declared-value points to quote. Every one must be a value we would actually declare:
+# the watchlist is capped at $2,300 RETAIL (docs/18) and pre-owned lists below that, so
+# $2,300 is a safe ceiling. The old bands included 3000 and 8000, which are shipments we
+# will never make -- quoting them cost manual effort and dragged the fit toward a range
+# we do not operate in.
+#
+# Density is placed where parcel_for() steps (the $50, $300 and $1,000 thresholds), since
+# that is where cost actually jumps. Above $1,000 the parcel is identical and only
+# insurance varies, so 1500 and 2300 are there to fit the insurance slope.
+BANDS = [30, 45, 60, 200, 300, 800, 1500, 2300]
 
 #: Destinations sampled to average across zones. Same-state, mid, and coast-to-coast.
 SAMPLE_DESTINATIONS = [
@@ -174,6 +183,9 @@ def emit_constants(fitted: dict[int, float]) -> str:
     ground = at(60, 8.5)  # light box, ~2 lb
     priority = max(at(300, 11.0) - 2.65, ground)
     express = max(at(1500, 28.0) - 12.6, priority)
+    # Registered Mail applies above a $5,000 declared value, which the $2,300
+    # watchlist cap makes unreachable. Kept so the constant stays defined and so
+    # raising the cap later does not silently emit a zero; it degrades to express.
     registered = max(at(8000, 45.0) - 40.0, express)
     per100 = round(max((at(800, 20.0) - at(300, 12.0)) / 5.0, 0.25), 2)
 

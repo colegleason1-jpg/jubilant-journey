@@ -61,8 +61,41 @@ They're separate problems and only one is urgent.
 in. Fifteen minutes.
 
 ```bash
-python -m scout.fit_shipping --quotes "30=6.10,300=12.40,1500=24.30,8000=68.20"
+python -m scout.fit_shipping --quotes "30=6.10,45=6.10,60=8.20,200=9.40,300=12.40,800=15.90,1500=24.30,2300=27.10"
 ```
+
+#### The worksheet
+
+Eight declared values, but **only four parcels** — within each pair the box and weight
+are identical, so the postage is the same and only the insurance changes. Quote each
+parcel once, then read the insurance off at both values.
+
+| Declare | Parcel (L×W×H in) | Weight | Ground Advantage tier | Cubic tier |
+|---|---|---|---|---|
+| $30, $45 | 9×6×1 bubble envelope | 0.56 lb | 12 oz | 0.1 cu ft |
+| $60, $200 | 8×6×4 | 0.90 lb | 15.999 oz | 0.2 cu ft |
+| $300, $800 | 9×7×5 | 3.00 lb | 3 lb | 0.2 cu ft |
+| $1,500, $2,300 | 10×8×6 | 4.00 lb | 4 lb | 0.3 cu ft |
+
+**Quote both weight-based and Cubic for each and enter the cheaper** — Cubic ignores
+weight under 20 lb and usually wins on the two heavier rows. Regenerate this table any
+time the parcel presets change:
+
+```bash
+python -c "
+from scout.fit_shipping import BANDS
+from scout.shipping import parcel_for, billable_weight_lb, cubic_eligible, cubic_tier, usps_weight_tier
+for v in BANDS:
+    p = parcel_for(v); w,_ = billable_weight_lb(p)
+    print(v, f'{p.length_in:.0f}x{p.width_in:.0f}x{p.height_in:.0f}', f'{w:.2f}lb',
+          usps_weight_tier(w), cubic_tier(p) if cubic_eligible(p) else 'no')"
+```
+
+> The bands stop at **$2,300** because the watchlist does ([docs/18](18-watchlist.md)).
+> Earlier bands included $3,000 and $8,000 — shipments we will never make, which cost
+> manual quoting effort and pulled the curve fit toward a range we do not operate in.
+> Registered Mail starts at a $5,000 declared value and is now unreachable; the
+> constant stays defined so raising the cap later doesn't silently emit a zero.
 
 **Integrating** is a month-three problem — it automates label buying, which at under
 10 labels/month you can do by hand.
