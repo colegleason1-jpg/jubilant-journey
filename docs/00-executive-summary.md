@@ -87,7 +87,7 @@ takes an afternoon. See [docs/03](03-unit-economics.md).
 
 | | |
 |---|---|
-| Target band | $600–$2,500 enthusiast watches (Seiko, Hamilton, Tissot, Longines, Oris, Tudor entry) |
+| Target band | **$70–$2,300**, capped. Mechanical/automatic enthusiast watches (Seiko, Orient, Hamilton, Tissot, Certina, Mido, Longines, Oris, Sinn, Nomos). The cheap end is customer acquisition, not a rounding error |
 | Gross profit/unit | **~$165** (~16% margin) |
 | Fixed costs | **~$150/month** |
 | Units for $1,200/mo net | **~8/month** |

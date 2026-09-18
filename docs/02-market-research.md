@@ -28,16 +28,21 @@ Ranked by *exploitability for a solo operator*, not by glamour:
 
 | Tier | Examples | Spread | Verdict |
 |---|---|---|---|
-| **Start here: $800–$2,500 enthusiast** | Seiko (Alpinist, SPB, Turtle), Hamilton, Tissot PRX/Gentleman, Longines Hydroconquest/Spirit, Oris Aquis/65, Christopher Ward, Certina, Sinn, Nomos entry, Tudor entry (used) | **12–25%** | **Target this.** Sloppy pricing, real demand, AG-eligible, survivable single-unit loss |
-| Mid-lux $2,500–$6,000 | Omega Seamaster/Speedmaster, Tudor BB58, Grand Seiko, Breitling | 6–12% | Phase 3. Free AG. Higher absolute margin, much higher single-unit risk |
-| High-lux $6,000+ | Rolex, AP, Patek | 2–5% | **Not year one** — but not never. 2% of $15,000 is $300, which is a fine trade *if* you settle by wire (card fees alone would be $435) and have the float. Revisit once you've done 50 clean orders |
-| Micro / fashion <$500 | Seiko 5, Casio, Orient, Timex | 25–35% | **Viable, and a good testbed.** A $30 watch bought at $14 nets ~$10 in 8 minutes (~$78/hour) with postage charged to the buyer. No authentication, but a dispute costs $30. Good for learning the pipeline with near-zero risk |
+| **The whole business: $200–$2,300 enthusiast** | Seiko (Alpinist, SPB, Turtle, Presage), Orient, Hamilton, Tissot PRX/Gentleman, Certina, Mido, Longines Hydroconquest/Spirit/Master, Oris 65, Rado, Christopher Ward, Sinn, Nomos entry | wide, and it is not a percentage | **Target this, and stop here.** Sellers are ordinary owners who did not look up the price — that is the whole edge |
+| Micro / fashion <$200 | Seiko 5, Casio, Orient, Timex | — | **Viable, and a good testbed.** A $30 watch bought at $14 nets ~$10 in 8 minutes (~$78/hour) with postage charged to the buyer. A dispute costs $30. Good for learning the pipeline with near-zero risk |
+| Mid-lux $2,500–$6,000 | Omega Seamaster/Speedmaster, Tudor BB58, Grand Seiko, Breitling | thin | **Cut, not deferred.** Above ~$2,000 the sellers are dealers and collectors who price correctly, so the dispersion that pays us collapses — and that is exactly where superclones live, so counterfeit exposure rises at the same time. Both reasons point the same way |
+| High-lux $6,000+ | Rolex, AP, Patek | 2–5% | **No.** Rolex alone is 80%+ of all counterfeits and retailers now catch only ~20% of them. The absolute dollars look tempting and the ruin risk is not worth it |
 
 > **There is no floor, and margin percentage is not the gate.** The rule is: does the
 > deal cover its own cash costs and leave something? A $30 watch at a dollar of profit
 > is a customer acquisition — and paid acquisition costs $156–782 at our price points.
 > Earlier drafts of this doc claimed a "$600" then a "$800" floor; both were artefacts
 > of a margin model I have since removed. See [docs/12](12-buy-box-and-offers.md).
+>
+> **There IS a ceiling, and it is $2,300.** Not a risk limit — an edge limit. Our edge
+> is that sub-$2,000 sellers are ordinary people who do not know what they have, and
+> that edge does not exist above the band. The spread percentages in the two bottom
+> rows above are real; they are just not ours to take.
 >
 > **$800–$2,500 is a good place to START** — best overlap of deal flow, absolute
 > dollars and survivable risk for a solo operator with limited float. Not a boundary.

@@ -46,12 +46,13 @@ Every watch we source generates a product page. Every watch we *sell* generates 
 | **Reference hub** | Everything about a reference + our price history + what we've sold | "Longines Hydroconquest 41mm: Real Prices, 2024–2026" | ~40 |
 | **Buying guide** | Honest, opinionated, genuinely useful | "How to Not Get Scammed Buying a Used Seiko Alpinist" | ~20 |
 | **Comparison** | Head-to-head | "Tissot PRX vs Hamilton Jazzmaster: which holds value?" | ~30 |
-| **Price tracker** | Our comp time series, published | "Used Omega Seamaster 300M prices, updated monthly" | ~15 |
+| **Price tracker** | Our comp time series, published | "Used Seiko Alpinist SPB121 prices, updated monthly" | ~15 |
 
 **The unfair advantage:** by month 6 you have a proprietary daily comp time series
-(`comp_snapshots`) on 40 references. *Nobody else can publish that.* WatchCharts has the
-data but their audience is collectors, not buyers-with-intent. A page titled **"What a
-used Oris Aquis actually sells for — 18 months of real data"** ranks, earns links from
+(`comp_snapshots`) on every reference in the watchlist. *Nobody else can publish that.*
+WatchCharts has the data but their audience is collectors, not buyers-with-intent. A
+page titled **"What a used Longines HydroConquest actually sells for — 18 months of
+real data"** ranks, earns links from
 forums, and converts, because it answers the exact question a buyer has 20 minutes
 before purchase.
 

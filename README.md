@@ -33,7 +33,7 @@ customer has already committed to buy.**
 | 15 | [Platform matrix](docs/15-platform-matrix.md) | **What each sourcing platform authenticates for free** — Bezel, Poshmark, Chrono24 escrow, and why Facebook Marketplace ranks last |
 | 16 | [Shadow mode runbook](docs/16-shadow-mode-runbook.md) | **Start here to actually run something.** Grade the model before spending money |
 | 17 | [Foundation & stack](docs/17-foundation-and-stack.md) | **Buy vs build audit.** What is ours, what to assemble, every free tier, and the Shippo finding |
-| 18 | [The watchlist](docs/18-watchlist.md) | The 35 references we scan for, why those, and how to drop the third that won't survive |
+| 18 | [The watchlist](docs/18-watchlist.md) | The 26 references we scan for, why those, and how to drop the third that won't survive |
 
 ## What's code here
 

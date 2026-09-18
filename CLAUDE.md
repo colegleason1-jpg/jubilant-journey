@@ -28,6 +28,14 @@ can't see — automatics, hand-wounds, day-dates, moonphases. They are buying a 
 and a bracelet, not a logo, and on the merits they'll take a good $2,000 movement over
 a Rolex. No batteries, no smart watches.
 
+**The $2,300 ceiling is an edge limit, not a risk limit.** Above roughly $2,000 the
+sellers are dealers and collectors who price correctly, so the dispersion that pays us
+collapses — and that is exactly where the superclones are, so counterfeit exposure
+rises at the same time. Both reasons point the same way. Do not reintroduce a
+"Phase 3 mid-lux" band; it was removed deliberately, not deferred. The engine's UPPER
+/ HIGH / ULTRA operational profiles in `tiers.ts` stay because they are correct and
+tested, but nothing in the watchlist should reach them.
+
 **We are in the business of making money, not inventing things.** Assemble from
 existing parts wherever a part exists. See [docs/17](docs/17-foundation-and-stack.md)
 for what is genuinely ours versus what is bought.
@@ -80,7 +88,7 @@ packages/core/        the engine. Zero dependencies, runs on Node 22 natively.
   platforms.ts        what each sourcing platform authenticates for free
 services/scout/       Python scanner. Stdlib only — CI skips pip install.
 supabase/migrations/  schema
-supabase/seeds/       watch_models.sql — the 35 references we scan for (docs/18)
+supabase/seeds/       watch_models.sql — the 26 references we scan for, capped at $2,300 (docs/18)
 docs/                 00-18, read 00 then 01
 ```
 

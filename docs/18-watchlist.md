@@ -1,6 +1,6 @@
 # 18 — The Watchlist
 
-`supabase/seeds/watch_models.sql` — 35 references.
+`supabase/seeds/watch_models.sql` — 26 references, capped at $2,300 retail.
 
 The scanner cannot look for watches in general. It searches for specific strings
 against specific references, so this file is the aperture: **a deal that is not on
@@ -210,7 +210,7 @@ price order. Then:
   within ~15% of each other, there is no spread and the reference will only ever
   produce query-1 and query-2 noise.
 - Watch the API budget: the Browse API allows ~5,000 calls/day and cost scales with
-  total query strings, not references. 35 references × 47 strings is comfortable; a few
+  total query strings, not references. 26 references × 37 strings is comfortable; a few
   hundred would not be.
 
 ## Deactivating, not deleting

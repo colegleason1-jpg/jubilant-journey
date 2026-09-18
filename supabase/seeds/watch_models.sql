@@ -1,4 +1,4 @@
--- Starting watchlist — 35 references.
+-- Starting watchlist — 26 references.
 --
 -- THIS IS A HYPOTHESIS, NOT A RESULT. The prices below are indicative, drawn from
 -- general market knowledge rather than measured, and exist only to put references
@@ -68,6 +68,14 @@
 -- economics still protect us. References outside it earn their place for a specific
 -- reason, not by default.
 --
+-- HARD CAP: $2,300 retail. Nine references above it (Tudor BB58, both Omegas,
+-- Breitling Superocean, TAG Carrera, Oris Aquis and ProDiver, GS Snowflake) were
+-- removed rather than kept "in case". Above roughly $2,000 the sellers are dealers
+-- and collectors who price correctly, so criterion 2 stops paying — and criterion 1
+-- gets worse at the same time, because that is where the superclones are. The two
+-- reasons point the same way. $2,300 rather than $2,000 only so the SBGX261 survives
+-- on its 9F exception.
+--
 -- DELIBERATELY EXCLUDED: Rolex, Audemars Piguet, Patek Philippe. Thin spreads,
 -- ruinous single-unit downside, and the overwhelming majority of the fake market.
 -- Also excluded: Seiko SKX007/009 — genuinely liquid, but among the most faked
@@ -119,7 +127,7 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 ('christopher-ward-c60','Christopher Ward','C60', 'Trident Pro 300',     995,  array['christopher ward c60 trident pro 300'], true),
 ('hamilton-intramatic', 'Hamilton', 'H38429130',  'Intra-Matic',         995,  array['hamilton intra-matic h38429130'], true),
 
--- ── Retail $1,000–2,500 ────────────────────────────────────────────────────────
+-- ── Retail $1,000–$2,300 ───────────────────────────────────────────────────────
 -- Mostly transacts pre-owned in the $600–1,500 range, i.e. the ENTRY and CORE
 -- operational profiles.
 ('seiko-sumo-spb103',   'Seiko',    'SPB103',     'Sumo',                1100, array['seiko sumo spb103'], true),
@@ -133,21 +141,7 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 ('rado-captain-cook',   'Rado',     'R32105',     'Captain Cook 42mm',   2200, array['rado captain cook 42mm r32105'], true),
 -- The quartz exception at the top end: the 9F is thermocompensated, hand-adjusted and
 -- collected AS a movement. Criterion 3 excludes batteries, not this.
-('seiko-gs-sbgx261',    'Grand Seiko','SBGX261',  'GS Quartz 9F',        2300, array['grand seiko sbgx261'], true),
-
--- ── Retail $2,500 and above ────────────────────────────────────────────────────
--- Free Authenticity Guarantee applies above a $2,000 SOURCE price, which is not
--- the same as $2,000 retail — most of these source well below it. Where a unit
--- does list above $2,500, tiers.ts moves it to ACH-preferred on its own.
-('oris-aquis-41',       'Oris',     '01 733 7766','Aquis Date 41.5mm',   2500, array['oris aquis date 41.5','oris aquis 733 7766'], true),
-('tag-carrera-39',      'TAG Heuer','WBN2110',    'Carrera 39mm',        3050, array['tag heuer carrera wbn2110'], true),
-('oris-prodiver',       'Oris',     '01 748 7748','ProDiver Titanium',   3800, array['oris prodiver titanium 748 7748'], true),
-('tudor-bb58-blue',     'Tudor',    'M79030B',    'Black Bay 58 Blue',   3900, array['tudor black bay 58 blue 79030b'], true),
-('tudor-bb58-black',    'Tudor',    'M79030N',    'Black Bay 58 Black',  3900, array['tudor black bay 58 79030n'], true),
-('breitling-superocean','Breitling','A17376',     'Superocean 42',       4500, array['breitling superocean 42 a17376'], true),
-('omega-seamaster-300m','Omega',    '210.30.42',  'Seamaster 300M',      5600, array['omega seamaster 300m 210.30.42'], true),
-('omega-aqua-terra',    'Omega',    '220.10.38',  'Aqua Terra 38mm',     5900, array['omega aqua terra 38mm 220.10'], true),
-('gs-sbga211',          'Grand Seiko','SBGA211',  'Snowflake',           6400, array['grand seiko snowflake sbga211'], true)
+('seiko-gs-sbgx261',    'Grand Seiko','SBGX261',  'GS Quartz 9F',        2300, array['grand seiko sbgx261'], true)
 
 on conflict (id) do update set
   nickname          = excluded.nickname,
