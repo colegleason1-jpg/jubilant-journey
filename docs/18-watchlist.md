@@ -1,6 +1,6 @@
 # 18 — The Watchlist
 
-`supabase/seeds/watch_models.sql` — 26 references, capped at $2,300 retail.
+`supabase/seeds/watch_models.sql` — 29 references, capped at $2,300 retail.
 
 The scanner cannot look for watches in general. It searches for specific strings
 against specific references, so this file is the aperture: **a deal that is not on
@@ -195,6 +195,37 @@ A reference that passes often but sells slowly is working capital sitting still 
 is the scarce resource, per non-negotiable 3. High `avg_days` is a reason to demand more
 contribution from that reference, not to keep buying it because the gate says yes.
 
+## A note on researching candidates
+
+A multi-agent research pass was run to backfill this list after the $2,300 cap. It
+proposed 60 candidates and returned 14 recommendations. **Only 3 of those 14 had
+actually been verified.**
+
+The cause is worth recording, because the same trap is waiting for the next person who
+tries it. The proposing agents consumed the entire session web-search budget (200
+calls) before the verification stage began, so ~57 verifiers ran with no research
+capability at all and rejected their candidates with reasons like *"REJECT ON PROCESS,
+NOT ON MERITS"* and *"BLOCKED, NOT DISPROVEN."* Those are not findings. Then the
+selection step had been told to "select 12–16" from a pool that had shrunk to 3, so it
+made up the difference from its own recall — and reported that honestly, in a prose
+field several hundred words long that was easy to skim past while the structured
+`selected` array looked authoritative.
+
+Two lessons, both cheap to apply:
+
+1. **Never let a quota outlive its pool.** Ask for "up to N of these, fewer if fewer
+   qualify," never a fixed count.
+2. **Budget the verification stage first.** Verification is the stage that must not be
+   skipped, so it should be the stage that gets the research budget. A proposal is
+   worthless without it — and worse than worthless, because it arrives looking like a
+   result.
+
+A re-run that spent its whole budget on verification is the correct shape. Anything a
+research pass proposes stays out of this file until a reference number has been
+confirmed against a real source, because a wrong reference number is not a visible
+error: it produces a search string that silently matches nothing, and three weeks later
+it is indistinguishable from a dead market (see maintenance query 1).
+
 ## Adding a reference
 
 Add to the seed file, in the retail band where it belongs, keeping rows in ascending
@@ -210,7 +241,7 @@ price order. Then:
   within ~15% of each other, there is no spread and the reference will only ever
   produce query-1 and query-2 noise.
 - Watch the API budget: the Browse API allows ~5,000 calls/day and cost scales with
-  total query strings, not references. 26 references × 37 strings is comfortable; a few
+  total query strings, not references. 29 references × 45 strings is comfortable; a few
   hundred would not be.
 
 ## Deactivating, not deleting

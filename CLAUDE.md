@@ -88,7 +88,7 @@ packages/core/        the engine. Zero dependencies, runs on Node 22 natively.
   platforms.ts        what each sourcing platform authenticates for free
 services/scout/       Python scanner. Stdlib only — CI skips pip install.
 supabase/migrations/  schema
-supabase/seeds/       watch_models.sql — the 26 references we scan for, capped at $2,300 (docs/18)
+supabase/seeds/       watch_models.sql — the 29 references we scan for, capped at $2,300 (docs/18)
 docs/                 00-18, read 00 then 01
 ```
 

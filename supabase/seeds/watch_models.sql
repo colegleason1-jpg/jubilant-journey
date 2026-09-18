@@ -1,4 +1,4 @@
--- Starting watchlist — 26 references.
+-- Starting watchlist — 29 references.
 --
 -- THIS IS A HYPOTHESIS, NOT A RESULT. The prices below are indicative, drawn from
 -- general market knowledge rather than measured, and exist only to put references
@@ -110,6 +110,11 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 ('orient-bambino-v4',   'Orient',   'FAC08',      'Bambino V4',          150, array['orient bambino version 4','orient bambino fac08'], true),
 ('timex-marlin-hand',   'Timex',    'TW2T18000',  'Marlin Hand-Wound',   229, array['timex marlin hand wound'], true),
 ('orient-kamasu',       'Orient',   'RA-AA0004',  'Kamasu',              300, array['orient kamasu','orient ra-aa0004'], true),
+-- NOT the Promaster we dropped. The BN0151 removed under criterion 3 is Eco-Drive
+-- (solar quartz); this is the Miyota 8203 AUTOMATIC. eBay's own catalog carries a
+-- bogus "Citizen Eco-Drive NY0040-09EE" page that will reinforce the confusion, so
+-- check the calibre at intake, not the catalog.
+('citizen-fugu-ny0040',  'Citizen',  'NY0040-09E', 'Promaster Fugu',      395, array['citizen ny0040-09e','citizen promaster automatic diver 200m','citizen promaster fugu automatic'], true),
 
 -- ── Retail $400–1,000 ──────────────────────────────────────────────────────────
 -- The densest band on the list, and the one most likely to survive shadow mode:
@@ -117,6 +122,10 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 -- rather than an event.
 ('seiko-presage-cocktail','Seiko',  'SRPB43',     'Cocktail Time',       425,  array['seiko presage cocktail time srpb43'], true),
 ('seiko-turtle-srpe93', 'Seiko',    'SRPE93',     'King Turtle',         525,  array['seiko king turtle srpe93','seiko turtle srpe93'], true),
+-- Verified used range $196-$308 on a ~$252 typical, with a ~$90 private-vs-dealer gap.
+-- Retail below is the comp anchor; do NOT reason from it as a sale price. Barely
+-- modded compared to the Turtle, so its comps stay clean.
+('seiko-samurai-srpb51', 'Seiko',    'SRPB51K1',   'Prospex Samurai',     525,  array['seiko srpb51','seiko prospex samurai automatic dive watch'], true),
 ('hamilton-khaki-mech', 'Hamilton', 'H69439931',  'Khaki Field Mechanical', 595, array['hamilton khaki field mechanical h69439931'], true),
 ('certina-ds-action',   'Certina',  'C032.407',   'DS Action Diver',     695,  array['certina ds action diver powermatic'], true),
 ('seiko-alpinist-spb121','Seiko',   'SPB121',     'Alpinist',            725,  array['seiko alpinist spb121','seiko spb121 green'], true),
@@ -135,6 +144,11 @@ insert into watch_models (id, brand, reference, nickname, retail_price_usd, ebay
 ('longines-hydro-41',   'Longines', 'L3.781.4',   'HydroConquest 41mm',  1500, array['longines hydroconquest 41','longines hydroconquest l3.781'], true),
 ('sinn-556a',           'Sinn',     '556 A',      '556 A',               1520, array['sinn 556a','sinn 556 a'], true),
 ('nomos-club-campus',   'Nomos',    '765',        'Club Campus 38',      1700, array['nomos club campus 38'], true),
+-- SDKS003 is the JDM catalog number for this exact watch (6R31, 37mm KSK case), and
+-- eBay lists it as a SEPARATE catalog page. JDM sellers title only SDKS003, so those
+-- listings are invisible to everyone searching SPB281 — which is the edge. Both
+-- strings belong under one model_id here precisely BECAUSE it is one watch.
+('seiko-king-seiko-spb281','Seiko',  'SPB281J1',   'King Seiko KSK 37mm', 1700, array['king seiko spb281','seiko sdks003 king seiko automatic','king seiko automatic 37mm'], true),
 ('longines-spirit-40',  'Longines', 'L3.810.4',   'Spirit 40mm',         2100, array['longines spirit 40mm l3.810'], true),
 ('longines-master-40',  'Longines', 'L2.793.4',   'Master Collection',   2200, array['longines master collection l2.793'], true),
 ('oris-65-40',          'Oris',     '01 733 7707','Divers Sixty-Five 40mm',2200, array['oris divers sixty five 40mm','oris 65 733 7707'], true),
