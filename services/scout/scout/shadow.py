@@ -22,6 +22,8 @@ that is too tight is invisible otherwise -- it just looks like a quiet month.
 from __future__ import annotations
 
 import statistics
+
+from . import economics
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Iterable
@@ -91,6 +93,23 @@ def decision_from_evaluation(ev, model_id: str, now: datetime | None = None) -> 
 # ─────────────────────────────── calibration ────────────────────────────────────
 
 
+
+def _first_per_listing(decisions: Iterable[ShadowDecision]) -> list[ShadowDecision]:
+    """One decision per eBay listing -- the earliest, which is the one we'd have acted on.
+
+    shadow_decisions is an append-only log and the scanner re-records its best
+    candidate per model on every run, so the same listing appears once per scan for
+    as long as it stays live. Counting each row equally weights a listing by how long
+    it failed to sell, which is precisely backwards.
+    """
+    first: dict[str, ShadowDecision] = {}
+    for d in decisions:
+        prev = first.get(d.ebay_item_id)
+        if prev is None or str(d.captured_at) < str(prev.captured_at):
+            first[d.ebay_item_id] = d
+    return list(first.values())
+
+
 @dataclass
 class CompAccuracy:
     """How close our market estimate was to what things actually sold for."""
@@ -118,7 +137,7 @@ def score_comps(
     errors: list[float] = []
     signed: list[float] = []
 
-    for d in decisions:
+    for d in _first_per_listing(decisions):
         o = outcomes.get(d.ebay_item_id)
         if not o or not o.sold or not o.sold_price_usd:
             continue
@@ -179,7 +198,8 @@ class GateReport:
 def score_gates(
     decisions: Iterable[ShadowDecision],
     outcomes: dict[str, Outcome],
-    min_contribution_usd: float = 1.0,
+    min_contribution_usd: float | None = None,
+    cfg=None,
 ) -> GateReport:
     """Grade the gates.
 
@@ -188,7 +208,19 @@ def score_gates(
     bad luck. The only way to see it is to check what the rejected listings went on
     to sell for.
     """
-    decisions = list(decisions)
+    from . import config as _config
+
+    cfg = cfg if cfg is not None else _config.load().pricing
+    if min_contribution_usd is None:
+        min_contribution_usd = cfg.min_contribution_usd
+
+    # One decision per listing. The scanner re-records its best candidate every run,
+    # so a listing that sits unsold for three weeks contributes hundreds of rows
+    # while one that sells in a day contributes one -- and slow listings are exactly
+    # the overpriced ones. Ungrouped, the calibration set is dominated by the deals
+    # that did NOT work, in both directions at once. Keep the EARLIEST decision per
+    # listing: that is the one we would actually have acted on.
+    decisions = _first_per_listing(decisions)
     passed_profitable = passed_unprofitable = missed = 0
     missed_by_gate: dict[str, int] = {}
     forgone = 0.0
@@ -199,8 +231,19 @@ def score_gates(
             continue
 
         # What we'd actually have cleared, using the realised price as the market.
-        realised_list = o.sold_price_usd * (1 - 0.10)
-        realised_contribution = realised_list - d.landed_source_usd
+        #
+        # This MUST use the same cost model the engine decides with. It used to be
+        # `sold_price * 0.90 - landed_source`, which silently omitted shipping, the
+        # payment-rail fee and packaging -- every cost compute_economics accounts
+        # for. The grader was therefore more generous than the engine, and it is the
+        # grader that decides whether gates are "too tight". Overstating realised
+        # contribution makes rejected deals look profitable, which reads as TOO
+        # TIGHT, which loosens the gates, which overpays with real money. A grader
+        # that is kinder than reality is worse than no grader.
+        realised_list = economics.solve_list_price(o.sold_price_usd, cfg)
+        realised_contribution = economics.compute_economics(
+            d.landed_source_usd, realised_list, cfg
+        ).contribution_usd
 
         if d.passed:
             if realised_contribution >= min_contribution_usd:
@@ -256,18 +299,21 @@ def _top_gate(missed_by_gate: dict[str, int]) -> str:
 def calibration_report(
     decisions: Iterable[ShadowDecision],
     outcomes: dict[str, Outcome],
-    min_contribution_usd: float = 1.0,
+    min_contribution_usd: float | None = None,
+    cfg=None,
 ) -> str:
     """The thing you read after three weeks of shadow mode."""
-    decisions = list(decisions)
+    rows = list(decisions)
+    decisions = _first_per_listing(rows)
     comps = score_comps(decisions, outcomes)
-    gates = score_gates(decisions, outcomes, min_contribution_usd)
+    gates = score_gates(decisions, outcomes, min_contribution_usd, cfg)
     resolved = sum(1 for d in decisions if outcomes.get(d.ebay_item_id, Outcome("", False)).sold)
 
     lines = [
         "SHADOW MODE CALIBRATION",
         "=" * 64,
-        f"decisions recorded : {len(decisions)}",
+        f"listings judged   : {len(decisions)}"
+        + (f"   (from {len(rows)} recorded rows)" if len(rows) != len(decisions) else ""),
         f"resolved (sold)    : {resolved}",
         "",
         "COMP ACCURACY  — is our market estimate right?",

@@ -34,6 +34,7 @@ customer has already committed to buy.**
 | 16 | [Shadow mode runbook](docs/16-shadow-mode-runbook.md) | **Start here to actually run something.** Grade the model before spending money |
 | 17 | [Foundation & stack](docs/17-foundation-and-stack.md) | **Buy vs build audit.** What is ours, what to assemble, every free tier, and the Shippo finding |
 | 18 | [The watchlist](docs/18-watchlist.md) | The 29 references we scan for, why those, and how to drop the third that won't survive |
+| 19 | [Engine/scanner parity audit](docs/19-engine-parity-audit.md) | **Read before shadow mode.** 61 confirmed divergences between the engine and the scanner that actually runs |
 
 ## What's code here
 

@@ -79,8 +79,31 @@ describe('evaluateDeal — gates', () => {
       DEFAULT_DEAL_CONFIG,
       NOW,
     );
-    assert.ok(!r.gatesFailed.includes('PRICE_BAND'));
+    // Assert the WHOLE verdict, not just PRICE_BAND. The earlier version of this
+    // test checked only that one gate, so when AUTHENTICATION_ELIGIBLE re-imposed
+    // the identical $500 floor through authTierForPrice() the test stayed green.
+    // A floor can come back through any gate; only an empty list rules them all out.
+    assert.deepEqual(r.gatesFailed, [], `a $420 deal should clear every gate`);
+    assert.ok(r.pass, 'a $420 deal against a $620 market should pass');
     assert.ok(r.economics.contributionUsd > 0, `contribution ${r.economics.contributionUsd}`);
+  });
+
+  test('no gate imposes a price floor anywhere in the cheap band', () => {
+    // Walks the band the $500 floor used to silently remove. Any gate that keys off
+    // an absolute price threshold shows up here as a cliff.
+    for (const priceUsd of [80, 150, 250, 350, 420, 499, 501]) {
+      const r = evaluateDeal(
+        candidate({ priceUsd }),
+        regularSales(22, priceUsd * 1.6, 4),
+        DEFAULT_DEAL_CONFIG,
+        NOW,
+      );
+      assert.deepEqual(
+        r.gatesFailed,
+        [],
+        `$${priceUsd} should clear every gate, failed: ${r.gatesFailed.join(', ')}`,
+      );
+    }
   });
 
   test('still rejects below the configured floor', () => {

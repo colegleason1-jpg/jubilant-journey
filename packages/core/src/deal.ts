@@ -11,7 +11,6 @@
 
 import { computeComps, computeLiquidity } from './comps.ts';
 import {
-  authTierForPrice,
   computeEconomics,
   discountToMarket,
   judgeDeal,
@@ -136,11 +135,23 @@ export function evaluateDeal(
     gatesFailed.push('PRICE_BAND');
   }
 
-  // ── Gate: Authenticity Guarantee eligibility ──────────────────────────────────
-  // Our entire "item not as described" defence rests on third-party authentication.
-  if (authTierForPrice(candidate.priceUsd) === 'NONE') {
-    gatesFailed.push('AUTHENTICATION_ELIGIBLE');
-  }
+  // ── NO Authenticity Guarantee gate. This is deliberate. ───────────────────────
+  // There was one here, rejecting anything under $500 via authTierForPrice(). It
+  // was the SECOND instance of the $500 floor in CLAUDE.md's mistakes table — the
+  // first was min_source_price_usd in the scanner — and it silently rejected the
+  // entire cheap band, which is most of the watchlist.
+  //
+  // Two reasons it was wrong, not one:
+  //   1. AG is not our INAD defence. eBay's Money Back Guarantee is free, runs 30
+  //      days, covers counterfeit and not-as-described, and overrides seller policy.
+  //      AG is an OPT-IN upsell (see authentication.ts), not a precondition to buy.
+  //   2. Gating on a price threshold is gating on margin percentage wearing a
+  //      different hat, which non-negotiable 3 forbids. A $200 watch that clears
+  //      its costs is a customer at a fraction of paid-acquisition cost.
+  //
+  // A test asserting a $420 candidate survives only checked PRICE_BAND, so this
+  // gate re-imposed the floor for months without failing anything. The test now
+  // asserts the whole verdict.
 
   // ── Gate: do we even know what this is worth? ─────────────────────────────────
   if (comps.confidence < config.minCompConfidence) {

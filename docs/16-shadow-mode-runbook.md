@@ -87,10 +87,23 @@ COMP ACCURACY  — is our market estimate right?
 GATES  — are we passing the right things?
   passes profitable   : 6
   passes unprofitable : 0
-  profitable rejects  : 5  ($225.00 left behind)
+  profitable rejects  : 5  ($329.85 left behind)
   blocked by          : {'DISCOUNT_TO_MARKET': 5}
-  -> gates are TOO TIGHT — rejected 5 profitable listings worth $225.
+  -> gates are TOO TIGHT — rejected 5 profitable listings worth $330.
 ```
+
+> **The grader subtracts the same costs the engine does.** It did not always. It used
+> to compute `sold_price × 0.90 − landed_source`, which omits shipping, the payment
+> rail and packaging — so it was systematically kinder than the engine it was grading.
+> On this very demo it reported *"5 profitable rejects worth $225"* about five deals
+> that each **lost $14.03**, and the conclusion drawn from phantom money was "loosen
+> the gates". A grader kinder than reality is worse than no grader, because it fails
+> in the direction of spending money.
+>
+> It also now counts each **listing** once. The scanner re-records its best candidate
+> every run, so a listing that sits unsold for three weeks used to contribute hundreds
+> of rows while one that sold in a day contributed one — weighting the calibration set
+> by how long a deal failed to sell.
 
 ### Reading it
 

@@ -23,10 +23,29 @@ import sys
 from . import config, shadow
 from .db import Db
 
+#: PostgREST caps a response at 1,000 rows by default; page at that size.
+_PAGE = 1000
+
 
 def _load_from_db(cfg) -> tuple[list[shadow.ShadowDecision], dict[str, shadow.Outcome]]:
     db = Db(cfg)
-    rows = db.select("shadow_decisions", "select=*&order=captured_at.desc&limit=5000")
+    # Page through every decision. This used to be a single
+    # `order=captured_at.desc&limit=5000`, which silently took the NEWEST 5,000 rows
+    # -- so a three-week report covered only its tail, and said nothing about the
+    # truncation. The scanner re-records its best candidate per model on every run,
+    # so the row count runs well past 5,000 within days. shadow.py groups these to
+    # one decision per listing; this function's job is just to not lose any.
+    rows: list[dict] = []
+    page = 0
+    while True:
+        batch = db.select(
+            "shadow_decisions",
+            f"select=*&order=captured_at.asc&limit={_PAGE}&offset={page * _PAGE}",
+        )
+        rows.extend(batch)
+        if len(batch) < _PAGE:
+            break
+        page += 1
     decisions = [
         shadow.ShadowDecision(
             captured_at=str(r.get("captured_at")),
@@ -50,7 +69,14 @@ def _load_from_db(cfg) -> tuple[list[shadow.ShadowDecision], dict[str, shadow.Ou
         for r in rows
     ]
 
-    outcome_rows = db.select("shadow_outcomes", "select=*&limit=5000")
+    outcome_rows: list[dict] = []
+    page = 0
+    while True:
+        batch = db.select("shadow_outcomes", f"select=*&limit={_PAGE}&offset={page * _PAGE}")
+        outcome_rows.extend(batch)
+        if len(batch) < _PAGE:
+            break
+        page += 1
     outcomes = {
         r["ebay_item_id"]: shadow.Outcome(
             ebay_item_id=r["ebay_item_id"],
@@ -78,7 +104,14 @@ def _demo() -> tuple[list[shadow.ShadowDecision], dict[str, shadow.Outcome]]:
         )
 
     decisions = [d(f"p{n}", 1150, 800) for n in range(6)]
-    decisions += [d(f"r{n}", 1150, 900, passed=False, gates=["DISCOUNT_TO_MARKET"])
+    # The rejects landed at $900 until the grader started subtracting real costs.
+    # Against a $1,050 sale that is +$45 each by the old `sold * 0.90 - landed`
+    # formula, and -$14.03 each once shipping, the rail fee and packaging come out.
+    # So the demo used to report "5 profitable rejects worth $225, gates are TOO
+    # TIGHT" about five deals that each LOST money -- advice to loosen the gates,
+    # derived entirely from costs the grader forgot. $820 is a reject that is
+    # genuinely profitable (+$65.97 net), which is what the demo means to show.
+    decisions += [d(f"r{n}", 1150, 820, passed=False, gates=["DISCOUNT_TO_MARKET"])
                   for n in range(5)]
     # Reality: they sell for ~$1,050, not $1,150. We are ~10% high.
     outcomes = {dd.ebay_item_id: shadow.Outcome(dd.ebay_item_id, True, 1050.0)

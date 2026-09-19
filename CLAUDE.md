@@ -72,6 +72,8 @@ for what is genuinely ours versus what is bought.
 | "For an order already placed on our site, buy at the ask immediately" | Deleted the primary margin source on every customer-triggered order | Wrong premise: transit is outside the auth window because capture fires at `PURCHASE_CONFIRMED`. One offer rung fits on every card brand with 66h+ to spare |
 | Proposing watchlist references without checking what they cost NEW | 4 of 14 candidates were buyable new below their proposed used price — Orient Ray II at $209.99, Timex M79 at $109 | New-old-stock ceiling is now criterion 4. `deal.ts` still has no gate for it |
 | "Americans don't know this brand, so sellers misprice it" (Mido, Certina) | Would have added two thin-liquidity references on a backwards argument | Thin distribution means few casual owners, so the naive-seller pool is thin too. Low recognition is evidence against criterion 2, not for it |
+| A second $500 floor, hiding in `AUTHENTICATION_ELIGIBLE` | The engine rejected every candidate under $500 — 19 of 29 references — for months. The test written to guard that floor only checked `PRICE_BAND` | Gate deleted. AG is an opt-in upsell, not a precondition; Money Back Guarantee is the INAD defence. Tests now assert the whole verdict across the band |
+| A calibration grader kinder than the engine it grades | `score_gates` omitted shipping, fees and packaging, so five demo deals that each LOST $14.03 were reported as "$225 left behind — gates too tight" | Grader calls `compute_economics`. A grader kinder than reality fails in the direction of spending money |
 
 **The pattern:** every one was a number reasoned toward rather than measured. That is
 what `--shadow` and `scout.calibrate` exist to prevent.
@@ -92,7 +94,7 @@ services/scout/       Python scanner. Stdlib only — CI skips pip install.
 supabase/migrations/  schema
 supabase/seeds/       watch_models.sql — the 29 references we scan for, capped at $2,300 (docs/18)
                       CANDIDATES-EVALUATED.md — proposed and rejected, with reasons
-docs/                 00-18, read 00 then 01
+docs/                 00-19, read 00 then 01
 ```
 
 ## Commands
@@ -137,5 +139,12 @@ quote both. Under a pound, Ground Advantage rounds up to 4/8/12/15.999 oz tiers.
 Label automation is **deliberately not being built** — labels are bought by hand on
 Pirate Ship with an existing label printer. `scout/shipping.py` exists and is tested
 for the day volume justifies it, and is not on the critical path.
+
+**Before shadow mode, read [docs/19](docs/19-engine-parity-audit.md).** The engine and
+the scanner do not implement the same decisions — 61 confirmed divergences, 4 fixed so
+far. Shadow mode costs three weeks; running it against a scanner that decides
+differently from the documented engine spends those weeks calibrating the wrong system.
+The largest open item: **nothing writes `comp_snapshots` or `observed_sales`**, so the
+scanner has no market price at all and skips every model without one.
 
 Then shadow mode — [docs/16](docs/16-shadow-mode-runbook.md).

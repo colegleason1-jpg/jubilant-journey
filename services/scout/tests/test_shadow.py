@@ -18,9 +18,10 @@ from scout.shadow import (  # noqa: E402
 
 
 def decision(item: str, *, estimate: float, landed: float, passed: bool = True,
-             gates: list[str] | None = None) -> ShadowDecision:
+             gates: list[str] | None = None,
+             captured_at: str = "2026-09-01T00:00:00+00:00") -> ShadowDecision:
     return ShadowDecision(
-        captured_at="2026-09-01T00:00:00+00:00",
+        captured_at=captured_at,
         ebay_item_id=item,
         model_id="m1",
         title="test watch",
@@ -94,9 +95,49 @@ class TestGateScoring(unittest.TestCase):
         outcomes = {d.ebay_item_id: Outcome(d.ebay_item_id, True, 1000.0) for d in decisions}
         r = score_gates(decisions, outcomes)
         self.assertEqual(r.missed_opportunities, 8)
-        self.assertGreater(r.forgone_contribution_usd, 3000)
         self.assertIn("TOO TIGHT", r.verdict)
         self.assertIn("DISCOUNT_TO_MARKET", r.verdict)
+
+        # 8 rejects, each sold at $1,000 against a $500 landed cost. The naive figure
+        # is 8 * ($900 list - $500) = $3,200. The real one is lower because shipping,
+        # the payment rail and packaging all come out first.
+        self.assertLess(r.forgone_contribution_usd, 3200)
+        self.assertGreater(r.forgone_contribution_usd, 2500)
+
+    def test_forgone_contribution_is_net_of_costs_not_gross(self):
+        """The grader must not be kinder than the engine.
+
+        score_gates used to compute `sold_price * 0.90 - landed_source`, omitting
+        shipping, the rail fee and packaging. It is the grader that decides whether
+        gates are "too tight", so overstating what a rejected deal would have cleared
+        reads as too tight, loosens the gates, and overpays with real money.
+        """
+        d = [decision("one", estimate=1000, landed=500, passed=False,
+                      gates=["DISCOUNT_TO_MARKET"])]
+        outcomes = {"one": Outcome("one", True, 1000.0)}
+        r = score_gates(d, outcomes)
+
+        gross = 1000.0 * 0.90 - 500.0          # the old, wrong formula
+        self.assertLess(r.forgone_contribution_usd, gross)
+        # and the gap is the real cost stack, not rounding
+        self.assertGreater(gross - r.forgone_contribution_usd, 10.0)
+
+    def test_one_listing_recorded_many_times_counts_once(self):
+        """The scanner re-records its best candidate every run.
+
+        A listing that sits unsold for three weeks yields hundreds of rows while one
+        that sells in a day yields one -- and the slow ones are the overpriced ones.
+        Ungrouped, the calibration set is dominated by the deals that did not work.
+        """
+        repeated = [
+            decision("same", estimate=1000, landed=500, passed=False,
+                     gates=["DISCOUNT_TO_MARKET"], captured_at=f"2026-09-{day:02d}T00:00:00Z")
+            for day in range(1, 22)
+        ]
+        outcomes = {"same": Outcome("same", True, 1000.0)}
+        r = score_gates(repeated, outcomes)
+        self.assertEqual(r.missed_opportunities, 1, "21 rows for one listing must count once")
+        self.assertEqual(r.rejected_count, 1)
 
     def test_names_the_gate_responsible_for_the_misses(self):
         decisions = [
@@ -129,7 +170,7 @@ class TestReport(unittest.TestCase):
         text = calibration_report(decisions, outcomes)
         self.assertIn("COMP ACCURACY", text)
         self.assertIn("GATES", text)
-        self.assertIn("decisions recorded : 5", text)
+        self.assertIn("listings judged   : 5", text)
 
 
 if __name__ == "__main__":
