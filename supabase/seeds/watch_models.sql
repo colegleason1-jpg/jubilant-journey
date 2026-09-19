@@ -56,11 +56,30 @@
 --      a customer-acquisition play (the DW-5600). Above it, quartz is allowed only
 --      where the movement is itself the collectible (the SBGX261's 9F).
 --
---   4. LIQUIDITY — enough sales, regularly. Enforced downstream by
+--   4. NEW-OLD-STOCK CEILING — can a buyer get it NEW, with a warranty, for less than
+--      we would list it used? If so there is no trade at any buy price, and no gate
+--      currently catches it: deal.ts has no notion of what a watch costs new.
+--
+--      This killed four of the first backfill candidates. The Orient Ray II is sold
+--      new at $209.99, the Timex M79 at $109, the Bulova Devil Diver at $238.79 on
+--      promo. All three were proposed as good buys at prices above those figures.
+--
+--      It also poisons the comp: where new stock dominates the active listings, a
+--      market estimate built from asking prices reads HIGH, and the engine overpays.
+--      Prefer references that are discontinued, or whose new price sits far enough
+--      above used that promo pricing cannot cross it. See CANDIDATES-EVALUATED.md.
+--
+--   5. LIQUIDITY — enough sales, regularly. Enforced downstream by
 --      computeLiquidity(); listed here as a judgement about which references have
 --      a real second-hand market rather than occasional collector trades.
 --
---   5. SEARCH DEMAND — a reference people actively look for converts on the
+--      NOT the same thing as obscurity. "Americans don't know this brand, so sellers
+--      misprice it" is a trap — it was argued for both Mido and Certina and is
+--      backwards. Thin US distribution means FEW AMERICANS OWN ONE, so the pool of
+--      naive private sellers is thin too. Criterion 2 needs a large casual-owner
+--      population; low brand recognition is evidence against exactly that.
+--
+--   6. SEARCH DEMAND — a reference people actively look for converts on the
 --      storefront and earns organic traffic.
 --
 -- WHERE THE CORE OF THIS LIST SITS: $200–$2,000. That is where hobbyist money is,

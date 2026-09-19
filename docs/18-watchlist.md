@@ -38,8 +38,15 @@ by whoever edits the list. In short, in order of weight:
 3. **Movement** — mechanical or automatic. Quartz is excluded in the $200–$2,000 band;
    allowed below it (different buyer, acquisition play) and above it only where the
    movement is the collectible.
-4. **Liquidity** — a real second-hand market, not occasional collector trades.
-5. **Search demand** — converts on the storefront and earns organic traffic.
+4. **New-old-stock ceiling** — can a buyer get it new, with a warranty, for less than
+   we'd list it used? Then there is no trade at any buy price. Four of the first
+   backfill candidates died here. It also biases comps upward wherever new stock
+   dominates the active listings. **No gate currently catches this.**
+5. **Liquidity** — a real second-hand market, not occasional collector trades. Not to
+   be confused with obscurity: "Americans don't know this brand" is a trap, argued for
+   both Mido and Certina. Thin distribution means few casual owners, so the naive
+   seller pool criterion 2 needs is thin too.
+6. **Search demand** — converts on the storefront and earns organic traffic.
 
 **Low depreciation is good, not bad.** It means a stable, well-known anchor price,
 which makes the comp trustworthy and an underpriced listing obvious. The Tissot PRX
@@ -225,6 +232,13 @@ research pass proposes stays out of this file until a reference number has been
 confirmed against a real source, because a wrong reference number is not a visible
 error: it produces a search string that silently matches nothing, and three weeks later
 it is indistinguishable from a dead market (see maintenance query 1).
+
+That re-run confirmed 3 of 11 reference numbers and found that **all eleven inclusion
+arguments were wrong** — including all three whose references checked out. None were
+added. A real reference with a disproven argument is not a reason to scan for it, and
+the two failure patterns it exposed (criteria 4 and 5 above) are worth more than the
+references would have been. Full record in
+[`supabase/seeds/CANDIDATES-EVALUATED.md`](../supabase/seeds/CANDIDATES-EVALUATED.md).
 
 ## Adding a reference
 

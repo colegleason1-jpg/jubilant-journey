@@ -70,6 +70,8 @@ for what is genuinely ours versus what is bought.
 | Recommending Vercel Hobby | Non-commercial only; a storefront breaks the terms | Cloudflare Pages |
 | Ranking watchlist references by how far they fall from retail | Would have dropped the best references — the PRX holds 94% of retail and is a *good* pick | Dispersion is variance WITHIN the used market, driven by seller sophistication. New→used is an axis we never transact on; capturing it would mean selling used as new |
 | "For an order already placed on our site, buy at the ask immediately" | Deleted the primary margin source on every customer-triggered order | Wrong premise: transit is outside the auth window because capture fires at `PURCHASE_CONFIRMED`. One offer rung fits on every card brand with 66h+ to spare |
+| Proposing watchlist references without checking what they cost NEW | 4 of 14 candidates were buyable new below their proposed used price — Orient Ray II at $209.99, Timex M79 at $109 | New-old-stock ceiling is now criterion 4. `deal.ts` still has no gate for it |
+| "Americans don't know this brand, so sellers misprice it" (Mido, Certina) | Would have added two thin-liquidity references on a backwards argument | Thin distribution means few casual owners, so the naive-seller pool is thin too. Low recognition is evidence against criterion 2, not for it |
 
 **The pattern:** every one was a number reasoned toward rather than measured. That is
 what `--shadow` and `scout.calibrate` exist to prevent.
@@ -89,6 +91,7 @@ packages/core/        the engine. Zero dependencies, runs on Node 22 natively.
 services/scout/       Python scanner. Stdlib only — CI skips pip install.
 supabase/migrations/  schema
 supabase/seeds/       watch_models.sql — the 29 references we scan for, capped at $2,300 (docs/18)
+                      CANDIDATES-EVALUATED.md — proposed and rejected, with reasons
 docs/                 00-18, read 00 then 01
 ```
 
